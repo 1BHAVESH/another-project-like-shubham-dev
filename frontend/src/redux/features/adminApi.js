@@ -335,6 +335,16 @@ export const adminApi = createApi({
         method: "GET",
       }),
     }),
+    getData: builder.query({
+      query: ({ url, params }) => ({
+        url,
+        method: "GET",
+        params,
+      }),
+
+      // 👇 yahan se tag attach hoga
+      providesTags: (_, __, { tag }) => (tag ? [tag] : []),
+    }),
   }),
 });
 
@@ -378,5 +388,6 @@ export const {
   useToggleMediaPostStatusMutation,
   useExcelImportEnquiriesMutation,
   useGetExcelEnquiriesQuery,
-  useSearchEnquiriesQuery
+  useSearchEnquiriesQuery,
+  useGetDataQuery
 } = adminApi;

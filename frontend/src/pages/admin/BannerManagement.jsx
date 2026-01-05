@@ -7,7 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import {
   useDeleteBannerMutation,
   useUpdateBannerMutation,
-  useGetAdminSideBannerQuery,
+  
+  useGetDataQuery,
 } from "@/redux/features/adminApi";
 
 import BannerForm from "@/components/admin/BannerForm";
@@ -27,7 +28,11 @@ import {
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export default function BannerManagement() {
-  const { data: bannersData, isLoading, error } = useGetAdminSideBannerQuery();
+  const { data: bannersData, isLoading, error } = useGetDataQuery(
+    {
+    url: "/banners"
+  }
+  );
   const [deleteBanner, { isLoading: isDeleting }] = useDeleteBannerMutation();
   const [updateBanner] = useUpdateBannerMutation();
 

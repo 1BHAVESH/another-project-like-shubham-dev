@@ -3,7 +3,8 @@ import "swiper/css";
 import "swiper/css/pagination";
 import { Pagination, Autoplay } from "swiper/modules";
 import {
-  useGetBannersQuery,
+  
+  useGetDataQuery,
   useGetGeneralSettingQueryQuery,
 } from "@/redux/features/adminApi";
 import { Menu } from "lucide-react";
@@ -43,16 +44,18 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 export default function HeroImage({ visible, setVisible }) {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { data: bannersData, isLoading } = useGetBannersQuery();
+  const {data: GetData, isLoading: getDataLoading} = useGetDataQuery({
+    url: "/banners"
+  })
   const {
     data: genralData,
     isSuccess: genralDataIsSuccess,
     isLoading: genralDataIsLoading,
   } = useGetGeneralSettingQueryQuery();
 
-  const banners = bannersData?.data || [];
+  // const banners = bannersData?.data || [];
 
-  if (isLoading) {
+  if (getDataLoading) {
     return (
       <section className="w-full h-[270px] lg:h-[501px] bg-gray-200 animate-pulse" />
     );
@@ -60,7 +63,13 @@ export default function HeroImage({ visible, setVisible }) {
 
   console.log(genralData);
 
+
+  console.log("getData", GetData)
+
+  const banners = GetData?.data || [];
+
   if (banners.length === 0) return null;
+
 
   return (
     <section className="w-full  relative">
