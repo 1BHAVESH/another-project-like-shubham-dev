@@ -39,6 +39,7 @@ import Enqiry from "@/pages/admin/Enqiry";
 import JobEnquiry from "@/pages/admin/JobEnquiry";
 import Media1 from "@/pages/Media1";
 import AdminMediaPost from "@/pages/admin/adminMediaPost";
+import CompanyPage from "@/pages/CompanyPage";
 
 export default function AppRoutes() {
   return (
@@ -50,6 +51,7 @@ export default function AppRoutes() {
           <Route path="/" element={<RealEstateLanding />} />
           <Route path="/about" element={<About />} />
           <Route path="/projects" element={<Projects />} />
+          <Route path="/company" element={<CompanyPage />} />
           <Route path="/contact" element={<ContactForm />} />
           {/* <Route path="/media" element={<Media />} /> */}
           <Route path="/mission-&-vision" element={<MissionAndVision />} />

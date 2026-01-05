@@ -66,7 +66,7 @@ export default function HeroImage({ visible, setVisible }) {
     <section className="w-full  relative">
       {/* Navigation overlay */}
       <nav className="absolute top-0 left-0 right-0 z-50 bg-transparent">
-        <div className="container mx-auto md:mr-5 px-5 py-4 lg:py-6">
+        <div className="container mx-auto  px-5 py-4 ">
           <div className="flex items-center justify-between lg:justify-between w-full md:max-w-[1370px]">
             {/* LEFT SIDE - Desktop Navigation */}
             <div className="hidden cursor-pointer lg:flex items-center gap-6 ">
@@ -102,6 +102,12 @@ export default function HeroImage({ visible, setVisible }) {
               </NavigationMenu>
 
               {/* CONTACT - Simple link */}
+              <Link
+                to="/compnies"
+                className="text-white text-sm lg:text-base font-medium hover:opacity-80 transition-opacity"
+              >
+                Compnies
+              </Link>
               <Link
                 to="/contact"
                 className="text-white text-sm lg:text-base font-medium hover:opacity-80 transition-opacity"

@@ -159,6 +159,10 @@ export default function Header() {
                 <Link to="/">Home</Link>
               </li>
 
+              <li className={`${activeNav === "company" ? "text-[#d4af37]" : ""}`}>
+                <Link to="/company">Company</Link>
+              </li>
+
               <li
                 className={`${
                   activeNav === "projects" ? "text-[#d4af37]" : ""
