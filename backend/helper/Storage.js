@@ -92,12 +92,8 @@ export const deleteOldImage = (folderName = "blogs") => (req, res, next) => {
 
       if (!oldImage) return next();
 
-      const filePath = path.join(
-        process.cwd(),
-        "uploads",
-        folderName,
-        oldImage
-      );
+      const filePath = path.join(process.cwd(),oldImage);
+console.log(path.join(process.cwd()));
 
       console.log("filePath", filePath);
       
