@@ -66,142 +66,13 @@ export const adminApi = createApi({
       providesTags: ["Banner"],
     }),
 
-    getBanners: builder.query({
-      query: () => "/banners",
-      providesTags: ["Banner"],
-    }),
-    createBanner: builder.mutation({
-      query: (formData) => ({
-        url: "/banners",
-        method: "POST",
-        body: formData,
-      }),
-      invalidatesTags: ["Banner"],
-    }),
-    updateBanner: builder.mutation({
-      query: ({ id, formData }) => ({
-        url: `/banners/${id}`,
-        method: "PUT",
-        body: formData,
-      }),
-      invalidatesTags: ["Banner"],
-    }),
-    deleteBanner: builder.mutation({
-      query: (id) => ({
-        url: `/banners/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Banner"],
-    }),
-
-    getProjects: builder.query({
-      query: () => "/projects",
-      providesTags: ["Project"],
-    }),
-    createProject: builder.mutation({
-      query: (formData) => ({
-        url: "/projects",
-        method: "POST",
-        body: formData,
-      }),
-      invalidatesTags: ["Project"],
-    }),
-    updateProject: builder.mutation({
-      query: ({ id, formData }) => ({
-        url: `/projects/${id}`,
-        method: "PUT",
-        body: formData,
-      }),
-      invalidatesTags: ["Project"],
-    }),
-    deleteProject: builder.mutation({
-      query: (id) => ({
-        url: `/projects/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Project"],
-    }),
-
-    createJob: builder.mutation({
-      query: (body) => ({
-        url: "/career/create-job",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["Career"],
-    }),
-
-    getJob: builder.query({
-      query: () => ({
-        url: "/career/",
-        method: "GET",
-      }),
-      providesTags: ["Career"],
-    }),
-
-    updateJob: builder.mutation({
-      query: ({ id, ...data }) => {
-        console.log("UPDATE REQ:", id, data);
-
-        return {
-          url: `/career/${id}`,
-          method: "PUT",
-          body: data,
-        };
-      },
-      invalidatesTags: ["Career"],
-    }),
-
-    deleteCareer: builder.mutation({
-      query: (id) => ({
-        url: `/career/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Career"],
-    }),
-
-    createFaq: builder.mutation({
-      query: (body) => ({
-        url: "/faq",
-        method: "POST",
-        body,
-      }),
-      invalidatesTags: ["Faq"],
-    }),
-
-    getFaq: builder.query({
-      query: () => ({
-        url: "/faq",
-        method: "GET",
-      }),
-      providesTags: ["Faq"],
-    }),
-
-    faqUpdate: builder.mutation({
-      query: ({ id, ...formData }) => ({
-        url: `/faq/${id}`,
-        method: "PUT",
-        body: formData,
-      }),
-      invalidatesTags: ["Faq"],
-    }),
-
-    deleteFaq: builder.mutation({
-      query: ({ id }) => {
-        return {
-          url: `faq/${id}`,
-          method: "DELETE",
-        };
-      },
-      invalidatesTags: ["Faq"],
-    }),
-    toggleProject: builder.mutation({
-      query: (id) => ({
-        url: `/projects/toggle/${id}`,
-        method: "PATCH",
-      }),
-      invalidatesTags: ["Project"],
-    }),
+    // toggleProject: builder.mutation({
+    //   query: (id) => ({
+    //     url: `/projects/toggle/${id}`,
+    //     method: "PATCH",
+    //   }),
+    //   invalidatesTags: ["Project"],
+    // }),
     getViewAnalytics: builder.query({
       query: () => "/view/get-view-count",
     }),
@@ -223,50 +94,11 @@ export const adminApi = createApi({
 
       providesTags: ["Admin"],
     }),
-    getAllContacts: builder.query({
-      query: () => ({
-        url: "/mail/",
-        method: "GET",
-      }),
+  
 
-      providesTags: ["Career"],
-    }),
+    
 
-    deleteEnquiry: builder.mutation({
-      query: (id) => ({
-        url: `/mail/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Career"],
-    }),
-
-    getApplications: builder.query({
-      query: () => ({
-        url: "job-enquiry/applications",
-        method: "GET",
-      }),
-      providesTags: ["Career"],
-    }),
-
-    deleteAllApplications: builder.mutation({
-      query: () => {
-        console.log("🔥 deleteAllApplications API called");
-
-        return {
-          url: "/job-enquiry/delete-all-applications",
-          method: "DELETE",
-        };
-      },
-      invalidatesTags: ["Career"],
-    }),
-
-    deleteJobBYId: builder.mutation({
-      query: (id) => ({
-        url: `job-enquiry/applications/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Career"],
-    }),
+   
 
     getAllPosts: builder.query({
       query: (params) => ({
@@ -343,7 +175,57 @@ export const adminApi = createApi({
       }),
 
       // 👇 yahan se tag attach hoga
-      providesTags: (_, __, { tag }) => (tag ? [tag] : []),
+      providesTags: (_, __, args) => {
+        console.log("🔥 PROVIDATE TAG ARGUMENTS:", args);
+
+        return args.tag ? [args.tag] : [];
+      },
+    }),
+
+    createData: builder.mutation({
+      query: ({ url, body }) => ({
+        url,
+        method: "POST",
+        body,
+      }),
+
+      // 👇 jis tag ko pass karoge wo refresh hoga
+      invalidatesTags: (_, __, args) => {
+        console.log("🔥 INVALIDATE TAG ARGUMENTS:", args);
+
+        return args.tag ? [args.tag] : [];
+      },
+    }),
+    updateData: builder.mutation({
+      query: ({ url, body }) => ({
+        url,
+        method: "PUT",
+        body,
+      }),
+
+      invalidatesTags: (_, __, { tag }) => (tag ? [tag] : []),
+    }),
+
+    patchData: builder.mutation({
+      query: ({ url, body }) => ({
+        url,
+        method: "PATCH",
+        body,
+      }),
+
+      invalidatesTags: (_, __, { tag }) => (tag ? [tag] : []),
+    }),
+    deleteData: builder.mutation({
+      query: ({ url }) => {
+        console.log("delete-url", url);
+
+        return {
+          url,
+          method: "DELETE",
+        };
+      },
+
+      invalidatesTags: (_, __, { tag }) => (tag ? [tag] : []),
     }),
   }),
 });
@@ -355,32 +237,15 @@ export const {
   useGetAdminProfileQuery,
   useUpdateAdminProfileMutation,
   useChangeAdminPasswordMutation,
-  useGetBannersQuery,
-  useCreateBannerMutation,
-  useUpdateBannerMutation,
-  useDeleteBannerMutation,
-  useGetProjectsQuery,
-  useCreateProjectMutation,
-  useUpdateProjectMutation,
-  useDeleteProjectMutation,
-  useCreateJobMutation,
-  useGetJobQuery,
-  useUpdateJobMutation,
-  useDeleteCareerMutation,
-  useCreateFaqMutation,
-  useGetFaqQuery,
-  useFaqUpdateMutation,
-  useDeleteFaqMutation,
+
   useGetAdminSideBannerQuery,
-  useToggleProjectMutation,
+  
   useGetViewAnalyticsQuery,
   useCreateGeneralSettingMutation,
   useGetGeneralSettingQueryQuery,
-  useGetAllContactsQuery,
-  useDeleteEnquiryMutation,
-  useDeleteJobBYIdMutation,
-  useGetApplicationsQuery,
-  useDeleteAllApplicationsMutation,
+  
+ 
+ 
   useGetAllPostsQuery,
   useCreateMediaPostMutationMutation,
   useUpdateMediaPostMutation,
@@ -389,5 +254,9 @@ export const {
   useExcelImportEnquiriesMutation,
   useGetExcelEnquiriesQuery,
   useSearchEnquiriesQuery,
-  useGetDataQuery
+  useGetDataQuery,
+  useCreateDataMutation,
+  useDeleteDataMutation,
+  useUpdateDataMutation,
+  usePatchDataMutation
 } = adminApi;

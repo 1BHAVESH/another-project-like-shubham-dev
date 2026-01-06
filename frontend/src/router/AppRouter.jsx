@@ -40,6 +40,7 @@ import JobEnquiry from "@/pages/admin/JobEnquiry";
 import Media1 from "@/pages/Media1";
 import AdminMediaPost from "@/pages/admin/adminMediaPost";
 import CompanyPage from "@/pages/CompanyPage";
+import AdminCompany from "@/pages/admin/AdminCompany";
 
 export default function AppRoutes() {
   return (
@@ -78,6 +79,7 @@ export default function AppRoutes() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="banners" element={<BannerManagement />} />
           <Route path="projects" element={<ProjectManagement />} />
+          <Route path="company" element={<AdminCompany />} />
           <Route path="home-page" element={<HomePage />} />
           <Route path="career" element={<CarrerAdmin />} />
           <Route path="faq" element={<AdminFaq />} />

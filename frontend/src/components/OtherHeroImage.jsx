@@ -1,5 +1,5 @@
 import {
-  useGetBannersQuery,
+ 
   useGetGeneralSettingQueryQuery,
 } from "@/redux/features/adminApi";
 import { Menu } from "lucide-react";
@@ -37,23 +37,22 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 export default function OtherHeroImage({ visible, setVisible }) {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { data: bannersData, isLoading } = useGetBannersQuery();
+  // const { data: bannersData, isLoading } = useGetBannersQuery();
   const {
     data: genralData,
     isSuccess: genralDataIsSuccess,
     isLoading: genralDataIsLoading,
   } = useGetGeneralSettingQueryQuery();
 
-  const banners = bannersData?.data || [];
-  const firstBanner = banners[0]; // Get only the first banner for static display
+  
 
-  if (isLoading) {
+  if (genralDataIsLoading) {
     return (
       <section className="w-full h-[270px] lg:h-[501px] bg-gray-200 animate-pulse" />
     );
   }
 
-  if (banners.length === 0) return null;
+  // if (banners.length === 0) return null;
 
   return (
     <section className="w-full relative">

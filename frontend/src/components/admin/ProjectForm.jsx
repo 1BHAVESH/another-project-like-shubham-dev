@@ -13,8 +13,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  useCreateProjectMutation,
-  useUpdateProjectMutation,
+ 
+  useCreateDataMutation,
+  useUpdateDataMutation,
+  
 } from "@/redux/features/adminApi";
 import { toast } from "sonner";
 
@@ -76,8 +78,8 @@ const urlToFile = async (url, filename) => {
 };
 
 export default function ProjectForm({ open, onOpenChange, project, length }) {
-  const [createProject, { isLoading: isCreating }] = useCreateProjectMutation();
-  const [updateProject, { isLoading: isUpdating }] = useUpdateProjectMutation();
+  const [createData, { isLoading: isCreating }] = useCreateDataMutation();
+  const [updateData, { isLoading: isUpdating }] = useUpdateDataMutation();
 
   // Image states
   const [deletedGalleryImages, setDeletedGalleryImages] = useState([]);
@@ -666,10 +668,13 @@ const handleImageChange = (e, setPreview, setSelected, maxSizeMB = 5) => {
       });
 
       if (isEditing) {
-        await updateProject({ id: project._id, formData }).unwrap();
+        const response  = await updateData({ url: `/projects/${project._id}`, body: formData,  tag: "Project" }).unwrap();
         toast.success("Project updated successfully!");
       } else {
-        await createProject(formData).unwrap();
+        const response = await createData({  url: "/projects", body: formData,  tag: "Project"}).unwrap();
+
+        console.log("create project", response);
+        
         toast.success("Project created successfully!");
       }
 

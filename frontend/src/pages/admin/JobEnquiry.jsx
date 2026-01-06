@@ -1,7 +1,7 @@
 import {
-  useDeleteAllApplicationsMutation,
-  useDeleteJobBYIdMutation,
-  useGetApplicationsQuery,
+
+  useDeleteDataMutation,
+  
 } from "@/redux/features/adminApi";
 import React, { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
@@ -27,18 +27,21 @@ import {
   Menu,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useGetDataQuery } from "@/redux/features/shubamdevApi";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const JobEnquiry = () => {
   // 🔹 Hooks (ALWAYS on top – no conditional return)
-  const { data, isLoading } = useGetApplicationsQuery();
+  const { data, isLoading, refetch } = useGetDataQuery({
+   url: "job-enquiry/applications",
+   tag: "Career"
+  }); 
   const [
-    deleteAllApplications,
-    { data: deltedAllData, isLoading: deletedAllDataLoading },
-  ] = useDeleteAllApplicationsMutation();
-  const [deleteJobBYId, { data: deleteData, isLoading: isDeleteLoading }] =
-    useDeleteJobBYIdMutation();
+    deleteData,
+    { data: deltedAllData, isLoading: isDeleteLoading },
+  ] = useDeleteDataMutation();
+  ;
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -187,9 +190,12 @@ const JobEnquiry = () => {
   const confirmDelete = async () => {
     if (deleteId) {
       try {
-        const response = await deleteJobBYId(deleteId).unwrap();
+        console.log(deleteId);
+        
+        const response = await deleteData({url:  `job-enquiry/applications/${deleteId}`,}).unwrap();
 
         if (response.success) {
+          refetch()
           toast.success("Application deleted successfully");
         }
         setShowDeleteModal(false);
@@ -213,9 +219,13 @@ const JobEnquiry = () => {
 
   const confirmDeleteAll = async () => {
     try {
-      const respone = await deleteAllApplications().unwrap();
+      const respone = await deleteData({
+         url: "/job-enquiry/delete-all-applications",
+         tag: "Career"
+      }).unwrap();
 
       if (respone.success) {
+        refetch()
         toast.success("All applications deleted successfully");
       }
       setShowDeleteAllModal(false);
@@ -261,11 +271,11 @@ const JobEnquiry = () => {
           {applications.length > 0 && (
             <Button
               onClick={handleDeleteAllClick}
-              disabled={deletedAllDataLoading}
+              disabled={isDeleteLoading}
               className="bg-red-600 cursor-pointer hover:bg-red-700 text-white w-full sm:w-auto"
               size="lg"
             >
-              {deletedAllDataLoading ? (
+              {isDeleteLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Deleting...
@@ -672,17 +682,17 @@ const JobEnquiry = () => {
             <div className="flex flex-col sm:flex-row gap-3 justify-end">
               <button
                 onClick={cancelDeleteAll}
-                disabled={deletedAllDataLoading}
+                disabled={isDeleteLoading}
                 className="px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDeleteAll}
-                disabled={deletedAllDataLoading}
+                disabled={isDeleteLoading}
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 inline-flex items-center justify-center"
               >
-                {deletedAllDataLoading ? (
+                {isDeleteLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Deleting All...

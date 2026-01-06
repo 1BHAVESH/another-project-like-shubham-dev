@@ -1,8 +1,13 @@
 import {
-  useCreateFaqMutation,
-  useDeleteFaqMutation,
-  useFaqUpdateMutation,
-  useGetFaqQuery,
+  useCreateDataMutation,
+  
+  useDeleteDataMutation,
+  
+
+
+  useGetDataQuery,
+  useUpdateDataMutation,
+  
 } from "@/redux/features/adminApi";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -11,10 +16,13 @@ import { Search, Bold, List, ListOrdered, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 const AdminFaq = () => {
-  const [createFaq] = useCreateFaqMutation();
-  const [updateFaq] = useFaqUpdateMutation();
-  const { data, isLoading: faqLoading, refetch } = useGetFaqQuery();
-  const [deleteFaq, {data: deleteData}] = useDeleteFaqMutation()
+  const [createData] = useCreateDataMutation();
+  const [updateData] = useUpdateDataMutation();
+  const { data, isLoading: faqLoading, refetch } =useGetDataQuery({
+      url: "/faq",
+      tag: "Faq"
+    });
+  const [deleteData] = useDeleteDataMutation()
 
   const [faqList, setFaqList] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -82,16 +90,17 @@ const AdminFaq = () => {
   const onSubmit = async (formData) => {
     try {
       if (editingFaq) {
-        const res = await updateFaq({
-          id: editingFaq._id,
-          ...formData,
+        const res = await updateData({
+           url: `/faq/${editingFaq._id}`,
+           body: formData,
         }).unwrap();
 
         setFaqList((prev) =>
           prev.map((faq) => (faq._id === editingFaq._id ? res.data : faq))
         );
       } else {
-        const res = await createFaq(formData).unwrap();
+        const res = await createData({url: "/faq", body: formData, tag: "Faq"}).unwrap();
+
         setFaqList((prev) => [res.data, ...prev]);
       }
 
@@ -103,7 +112,7 @@ const AdminFaq = () => {
   };
 
   const handleDelete = async(id) => {
-    const response  = await deleteFaq({id}).unwrap()
+    const response  = await deleteData({url: `faq/${id}`, tag: "Faq"}).unwrap()
 
     console.log(response)
 

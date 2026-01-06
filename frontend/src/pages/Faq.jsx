@@ -8,10 +8,15 @@ import {
   AccordionContent,
 } from "@/components/ui/accordion";
 import HeroImage from "@/components/HeroImage";
-import { useGetFaqQuery } from "@/redux/features/shubamdevApi";
+import { useGetDataQuery } from "@/redux/features/shubamdevApi";
+
+
 
 const Faq = () => {
-  const { data, isLoading } = useGetFaqQuery();
+  const { data, isLoading } = useGetDataQuery({
+    url: "/faq",
+    tag: "Faq"
+  });
   const [openItem, setOpenItem] = useState("");
   const [visible, setVisible] = useState(true);
 

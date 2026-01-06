@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { useGetProjectsQuery } from "@/redux/features/adminApi";
+// import { useGetDataQuery } from "@/redux/features/adminApi";
 import { Button } from "@/components/ui/button";
 import EnquiryDialog from "@/components/EnquiryDialog";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import HeroImage from "@/components/HeroImage";
 import { useState } from "react";
 import OtherHeroImage from "@/components/OtherHeroImage";
+import { useGetDataQuery } from "@/redux/features/shubamdevApi";
 
 // const BASE_URL = "http://localhost:3001";
 
@@ -15,7 +16,10 @@ export default function Projects() {
   const [visible, setVisible] = useState(true);
 
   const navigate = useNavigate();
-  const { data: projectsData, isLoading } = useGetProjectsQuery();
+  const { data: projectsData, isLoading } =  useGetDataQuery({
+      url: "/projects",
+      tag: "Project"
+    });
   const projects = projectsData?.data || [];
 
   // console.log(projects);

@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Image, FolderKanban, LogOut, Menu, X, HomeIcon, Briefcase, Newspaper, Settings, MessageCircle } from "lucide-react";
+import { LayoutDashboard, Image, FolderKanban, LogOut, Menu, X, HomeIcon, Briefcase, Newspaper, Settings, MessageCircle, Building } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
@@ -18,6 +18,11 @@ const navItems = [
     name: "Projects",
     path: "/admin/projects",
     icon: FolderKanban,
+  },
+   {
+    name: "Company",
+    path: "company",
+    icon: Building
   },
   {
     name: "Home-Page",
@@ -59,7 +64,8 @@ const navItems = [
     name: "Media Posts",
     path: "media-posts",
     icon: Newspaper
-  }
+  },
+ 
 ];
 
 export default function AdminSidebar() {

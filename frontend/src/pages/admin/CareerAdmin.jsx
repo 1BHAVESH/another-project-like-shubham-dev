@@ -1,16 +1,20 @@
 import {
-  useCreateJobMutation,
-  useDeleteCareerMutation,
-  useGetJobQuery,
-  useUpdateJobMutation,
+  useCreateDataMutation,
+  
+  
+  useDeleteDataMutation,
+  useGetDataQuery,
+  useUpdateDataMutation,
+  
 } from "@/redux/features/adminApi";
 import React, { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { Search, Plus } from "lucide-react";
 import { toast } from "sonner";
 
+
 const CareerAdmin = () => {
-  const [deleteCareer] = useDeleteCareerMutation();
+  const [deleteData] = useDeleteDataMutation();
 
   const [showModal, setShowModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -20,9 +24,12 @@ const CareerAdmin = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
-  const [createJob, { isLoading: isCreating }] = useCreateJobMutation();
-  const [updateJob, { isLoading: isUpdating }] = useUpdateJobMutation();
-  const { data: jobData, isLoading: isLoadingJobs, error } = useGetJobQuery();
+  const [createData, { isLoading: isCreating }] = useCreateDataMutation();
+  const [updateData, { isLoading: isUpdating }] = useUpdateDataMutation();
+  const { data: jobData, isLoading: isLoadingJobs, error } = useGetDataQuery({
+    url: "/career/",
+    tag: "Career"
+  });
 
   const {
     register,
@@ -82,16 +89,19 @@ const CareerAdmin = () => {
   const onSubmit = async (formData) => {
     try {
       if (editingJob) {
-        const response = await updateJob({
-          id: editingJob._id,
-          ...formData,
+        const response = await updateData({
+          url: `/career/${editingJob._id}`,
+          body: formData,
+          tag: "Career"
         }).unwrap();
         
         if (response.status) {
           toast.success("Position updated successfully");
         }
       } else {
-        const response = await createJob(formData).unwrap();
+        console.log("pp");
+        
+        const response = await createData({url: "/career/create-job", body: formData, tag: "Career"}).unwrap();
         
         if (response.status) {
           toast.success("Position created successfully");
@@ -115,7 +125,7 @@ const CareerAdmin = () => {
     if (!deleteId) return;
 
     try {
-      const response = await deleteCareer(deleteId).unwrap();
+      const response = await deleteData({ url: `/career/${deleteId}`, tag: "Career"}).unwrap();
 
       if (response.status) {
         toast.success("Job deleted successfully");

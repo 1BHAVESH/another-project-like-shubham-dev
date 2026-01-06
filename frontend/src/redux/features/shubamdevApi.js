@@ -18,9 +18,15 @@ export const shubhamDevApi = createApi({
       }),
     }),
 
-    getProjects: builder.query({
-      query: () => "/projects",
-      providesTags: ["Project"],
+   getData: builder.query({
+      query: ({ url, params }) => ({
+        url,
+        method: "GET",
+        params,
+      }),
+
+      // 👇 yahan se tag attach hoga
+      providesTags: (_, __, { tag }) => (tag ? [tag] : []),
     }),
 
     getProjectBySlug: builder.query({
@@ -70,7 +76,7 @@ export const shubhamDevApi = createApi({
 
 export const {
   useMailSendMutation,
-  useGetProjectsQuery,
+  useGetDataQuery,
   useGetProjectBySlugQuery,
   useGetProjectByIdQuery,
 

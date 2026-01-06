@@ -20,6 +20,7 @@ import videoRoute from "./routes/videoRoute.js";
 import jobRoutes from "./routes/jobRoute.js";
 import mediaRoute from "./routes/mediaRoute.js";
 import excelRoute from "./routes/excelEnquiryRote.js";
+import companyRoute from "./routes/companyRoutes.js"
 
 dotenv.config();
 
@@ -63,6 +64,7 @@ app.use("/api/genral-setting", genralSettingRoute);
 app.use("/api/job-enquiry", jobRoutes);
 app.use("/api/media", mediaRoute);
 app.use("/api/excel-enquiry", excelRoute);
+app.use("/api/company", companyRoute)
 
 // Start Server
 app.listen(PORT, () => {

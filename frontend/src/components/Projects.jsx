@@ -1,14 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import EnquiryDialog from "./EnquiryDialog";
-import { useGetProjectsQuery } from "@/redux/features/adminApi";
+
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
+import { useGetDataQuery } from "@/redux/features/shubamdevApi";
 
 const API_URL = import.meta.env.VITE_API_URL || " http://localhost:3001/";
 
 export default function Projects() {
   const navigate = useNavigate();
-  const { data: projectsData, isLoading } = useGetProjectsQuery();
+  const { data: projectsData, isLoading } = useGetDataQuery({
+    url: "/projects",
+    tag: "Project"
+  });
   const allProjects = projectsData?.data || [];
 
   // Filter only active projects

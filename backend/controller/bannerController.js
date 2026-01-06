@@ -41,7 +41,7 @@ export const createBanner = async (req, res) => {
       return res.status(400).json({ success: false, message: "Image is required" });
     }
 
-    const imageUrl = `/uploads/${req.file.filename}`;
+    const imageUrl = `/uploads/banners/${req.file.filename}`;
 
     const banner = await Banner.create({
       title,
@@ -75,8 +75,8 @@ export const updateBanner = async (req, res) => {
 
     // File update: delete old file → save new file
     if (req.file) {
-      deleteOldFile(banner.imageUrl);
-      banner.imageUrl = `/uploads/${req.file.filename}`;
+     
+      banner.imageUrl = `/uploads/banners/${req.file.filename}`;
     }
 
     const updatedBanner = await banner.save();

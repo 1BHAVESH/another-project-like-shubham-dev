@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { useGetProjectsQuery } from "@/redux/features/adminApi";
+
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import EnquiryDialog from "@/components/EnquiryDialog";
 import { Swiper, SwiperSlide } from "swiper/react";

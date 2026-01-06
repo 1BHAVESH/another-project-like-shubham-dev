@@ -1,7 +1,8 @@
 import {
-  useDeleteEnquiryMutation,
+  useDeleteDataMutation,
+  // useDeleteEnquiryMutation,
   useExcelImportEnquiriesMutation,
-  useGetAllContactsQuery,
+  
   useSearchEnquiriesQuery,
 } from "@/redux/features/adminApi";
 import React, { useEffect, useState, useMemo, useCallback } from "react";
@@ -28,6 +29,7 @@ import {
   Database,
 } from "lucide-react";
 import {
+  useGetDataQuery,
   useGetProjectTitleQuery,
   useMailSendMutation,
 } from "@/redux/features/shubamdevApi";
@@ -154,10 +156,13 @@ function Enquiry() {
     resolver: yupResolver(enquirySchema),
   });
 
-  const { data, isLoading, error, refetch } = useGetAllContactsQuery();
+  const { data, isLoading, error, refetch } = useGetDataQuery({
+    url: "/mail/",
+    
+  });
   const [excelImportEnquiries] = useExcelImportEnquiriesMutation();
-  const [deleteEnquiry, { isLoading: deleteLoading }] =
-    useDeleteEnquiryMutation();
+  const [deleteData, { isLoading: deleteLoading }] =
+    useDeleteDataMutation();
   const [mailSend, { isLoading: mailSendLoading }] = useMailSendMutation();
   const { data: projectTitleData, isLoading: projectTitleLoading } =
     useGetProjectTitleQuery();
@@ -305,7 +310,7 @@ function Enquiry() {
   const handleDelete = useCallback(
     async (id) => {
       try {
-        await deleteEnquiry(id).unwrap();
+        await deleteData({url: `/mail/${id}`}).unwrap();
         setEnquiries((prev) => prev.filter((item) => item._id !== id));
         setDeleteConfirm(null);
         setSelectedEnquiry(null);
@@ -314,7 +319,7 @@ function Enquiry() {
         alert("Failed to delete enquiry. Please try again.");
       }
     },
-    [deleteEnquiry]
+    [deleteData]
   );
 
   const formatDate = useCallback((dateString) => {

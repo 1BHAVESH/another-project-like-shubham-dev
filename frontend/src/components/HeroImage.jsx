@@ -112,7 +112,7 @@ export default function HeroImage({ visible, setVisible }) {
 
               {/* CONTACT - Simple link */}
               <Link
-                to="/compnies"
+                to="/company"
                 className="text-white text-sm lg:text-base font-medium hover:opacity-80 transition-opacity"
               >
                 Compnies
@@ -129,12 +129,7 @@ export default function HeroImage({ visible, setVisible }) {
               >
                 Projects
               </Link>
-              <Link
-                to="/media"
-                className="text-white text-sm lg:text-base font-medium hover:opacity-80 transition-opacity"
-              >
-                Media
-              </Link>
+              
             </div>
 
             {/* CENTER - LOGO   src={`${API_URL}/${genralData?.data?.logo}`} */}
@@ -152,6 +147,14 @@ export default function HeroImage({ visible, setVisible }) {
             <div className="flex items-center gap-6 lg:gap-8">
               {/* Desktop Navigation */}
               <ul className="hidden lg:flex gap-6 lg:gap-8">
+                <li>
+                  <Link
+                to="/media"
+                className="text-white text-sm lg:text-base font-medium hover:opacity-80 transition-opacity"
+              >
+                Media
+              </Link>
+                </li>
                 <li>
                   <Link
                     to="/join-venture"

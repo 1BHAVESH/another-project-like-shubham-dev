@@ -14,23 +14,28 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  useCreateBannerMutation,
-  useUpdateBannerMutation,
+ 
+  useCreateDataMutation,
+  useUpdateDataMutation,
+  
 } from "@/redux/features/adminApi";
 import { toast } from "sonner";
 
 export default function BannerForm({ open, onOpenChange, banner }) {
   console.log(banner);
-  const [createBanner, { isLoading: isCreating }] = useCreateBannerMutation();
-  const [updateBanner, { isLoading: isUpdating }] = useUpdateBannerMutation();
+  const [createData, {isLoading: isCreating}] = useCreateDataMutation()
+  
+  
+  const [updateData, { isLoading: isUpdating }] = useUpdateDataMutation()
   const [imagePreview, setImagePreview] = useState(null);
+  const [oldImage, setOldImage] = useState(null)
   const [selectedFile, setSelectedFile] = useState(null);
   const [isActive, setIsActive] = useState(true);
 
   const isEditing = !!banner;
   const isLoading = isCreating || isUpdating;
 
-  const BASE_URL = "http://localhost:3001";
+  const BASE_URL = "http://localhost:3008";
 
   const {
     register,
@@ -55,6 +60,7 @@ export default function BannerForm({ open, onOpenChange, banner }) {
         order: banner.order || 0,
       });
       console.log(banner.imgUrl);
+      setOldImage(banner?.imageUrl)
       setImagePreview(banner?.imageUrl ? `${BASE_URL}${banner.imageUrl}` : null);
       setIsActive(banner.isActive !== undefined ? banner.isActive : true);
       console.log(imagePreview);
@@ -105,6 +111,10 @@ const handleImageChange = (e) => {
 
   const onSubmit = async (data) => {
     try {
+
+      console.log();
+      
+
       const formData = new FormData();
       formData.append("title", data.title);
       formData.append("description", data.description);
@@ -115,12 +125,21 @@ const handleImageChange = (e) => {
       if (selectedFile) {
         formData.append("image", selectedFile);
       }
+      if(oldImage){
+        formData.append("oldImage", oldImage)
+      }
 
       if (isEditing) {
-        await updateBanner({ id: banner._id, formData }).unwrap();
+         const response =  await updateData({ url:  `/banners/${banner._id}`, body: formData, tag: "banners" }).unwrap();
+
+         console.log("update response",response)
         toast.success("Banner updated successfully!");
       } else {
-        await createBanner(formData).unwrap();
+       const response = await createData({
+          url: "/banners",
+          body: formData,
+          tag: "banners"
+        }).unwrap();
         toast.success("Banner created successfully!");
       }
 
@@ -130,6 +149,7 @@ const handleImageChange = (e) => {
       setImagePreview(null);
       setIsActive(true);
     } catch (error) {
+      console.log(error)
       toast.error(error?.data?.message || "Something went wrong");
     }
   };

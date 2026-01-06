@@ -5,10 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 
 import {
-  useDeleteBannerMutation,
-  useUpdateBannerMutation,
+  
+  // useUpdateBannerMutation,
   
   useGetDataQuery,
+  useDeleteDataMutation,
+  useUpdateDataMutation,
 } from "@/redux/features/adminApi";
 
 import BannerForm from "@/components/admin/BannerForm";
@@ -30,11 +32,16 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 export default function BannerManagement() {
   const { data: bannersData, isLoading, error } = useGetDataQuery(
     {
-    url: "/banners"
+    url: "/banners",
+    tag: "banners"
   }
   );
-  const [deleteBanner, { isLoading: isDeleting }] = useDeleteBannerMutation();
-  const [updateBanner] = useUpdateBannerMutation();
+
+  const [deleteData, {isLoading: isDeleting}] = useDeleteDataMutation()
+  
+  // const [updateBanner] = useUpdateBannerMutation();
+
+  const [updateData] = useUpdateDataMutation()
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedBanner, setSelectedBanner] = useState(null);
@@ -116,7 +123,11 @@ export default function BannerManagement() {
 
   const handleDeleteConfirm = async () => {
     try {
-      await deleteBanner(bannerToDelete._id).unwrap();
+      // await deleteBanner(bannerToDelete._id).unwrap();
+      const response = await deleteData({
+        url:  `/banners/${bannerToDelete._id}`,
+        tag: "banners"
+      }).unwrap();
       toast.success("Banner deleted successfully!");
       setDeleteDialogOpen(false);
       setBannerToDelete(null);
@@ -144,7 +155,7 @@ export default function BannerManagement() {
       formData.append("order", banner.order || 0);
       formData.append("isActive", newStatus);
 
-      await updateBanner({ id: banner._id, formData }).unwrap();
+     const response =  await updateData({ url:  `/banners/${id}`, body: formData, tag: "banners" }).unwrap();
       toast.success(`Banner ${newStatus ? "activated" : "deactivated"}!`);
     } catch (err) {
       toast.error("Failed to update banner status");

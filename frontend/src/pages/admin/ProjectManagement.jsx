@@ -15,10 +15,14 @@ import {
 
 import { toast } from "sonner";
 import {
-  useGetProjectsQuery,
-  useDeleteProjectMutation,
-  useUpdateProjectMutation,
-  useToggleProjectMutation,
+  
+
+  
+  
+  useGetDataQuery,
+ 
+  useDeleteDataMutation,
+  usePatchDataMutation,
 } from "@/redux/features/adminApi";
 
 import DataTable from "@/components/common/DataTable";
@@ -28,11 +32,14 @@ import { Switch } from "@/components/ui/switch";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export default function ProjectManagement() {
-  const [toggleProject] = useToggleProjectMutation();
+  const [patchData] = usePatchDataMutation();
 
-  const { data: projectsData, isLoading, error } = useGetProjectsQuery();
-  const [deleteProject, { isLoading: isDeleting }] = useDeleteProjectMutation();
-  const [updateProject] = useUpdateProjectMutation();
+  const { data: projectsData, isLoading, error } = useGetDataQuery({
+      url: "/projects",
+      tag: "Project"
+    });
+  const [deleteData, { isLoading: isDeleting }] = useDeleteDataMutation();
+  
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
@@ -113,11 +120,15 @@ export default function ProjectManagement() {
 
   const handleDeleteConfirm = async () => {
     try {
-      await deleteProject(projectToDelete._id).unwrap();
+      console.log("Delete Data");
+      
+     const response =  await deleteData({url: `/projects/${projectToDelete._id}`,  tag: "Project"}).unwrap();
       toast.success("Project deleted successfully!");
       setDeleteDialogOpen(false);
       setProjectToDelete(null);
     } catch (error) {
+      console.log(error);
+      
       toast.error("Failed to delete project");
     }
   };
@@ -135,7 +146,7 @@ export default function ProjectManagement() {
 
     try {
       console.log(project);
-      const response = await toggleProject(project._id).unwrap();
+      const response = await patchData({url: `/projects/toggle/${project._id}`, tag: "Project"} ).unwrap();
 
       console.log(response);
       toast.success(

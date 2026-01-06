@@ -108,6 +108,11 @@ const projectSchema = new mongoose.Schema({
     type: String,
   },
 
+  company: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Company",
+  },
+
   // Settings
   isActive: {
     type: Boolean,
