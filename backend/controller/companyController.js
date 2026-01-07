@@ -1,5 +1,5 @@
 import { Company } from "../models/Compnies.js";
-import slugify from "slugify";
+
 
 import fs from "fs";
 import path from "path";
@@ -60,6 +60,8 @@ export const getCompanies = async (req, res) => {
     });
   }
 
+};
+
 
 const slugify = (str = "") =>
   str
@@ -68,7 +70,7 @@ const slugify = (str = "") =>
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");};
+    .replace(/-+/g, "-");
 
 export const createCompany = async (req, res) => {
   try {
@@ -197,17 +199,12 @@ export const updateCompany = async (req, res) => {
     }
 
     // ------------------------------
-    // HANDLE LOGO (OPTIONAL)
+    // OLD SLUG
     // ------------------------------
-    let finalLogoPath = company.logo;
-
-    if (req.file) {
-      const normalized = req.file.path.replace(/\\/g, "/");
-      finalLogoPath = "/uploads" + normalized.split("uploads")[1];
-    }
+    const oldSlug = company.slug;
 
     // ------------------------------
-    // UPDATE FIELDS
+    // UPDATE BASIC FIELDS
     // ------------------------------
     company.name = req.body.name ?? company.name;
     company.email = req.body.email ?? company.email;
@@ -221,18 +218,54 @@ export const updateCompany = async (req, res) => {
       req.body.establishedOn ?? company.establishedOn;
     company.status = req.body.status ?? company.status;
 
-    company.address.street =
-      req.body.street ?? company.address.street;
-    company.address.city =
-      req.body.city ?? company.address.city;
-    company.address.state =
-      req.body.state ?? company.address.state;
-    company.address.country =
-      req.body.country ?? company.address.country;
-    company.address.pincode =
-      req.body.pincode ?? company.address.pincode;
+    company.address.street = req.body.street ?? company.address.street;
+    company.address.city = req.body.city ?? company.address.city;
+    company.address.state = req.body.state ?? company.address.state;
+    company.address.country = req.body.country ?? company.address.country;
+    company.address.pincode = req.body.pincode ?? company.address.pincode;
 
-    company.logo = finalLogoPath;
+    // ------------------------------
+    // NEW SLUG (WE KEEP SAME IF NOT SENT)
+    // ------------------------------
+    const newSlug = slugify(req.body.name) || oldSlug;
+
+    // ------------------------------
+    // CHECK IF SLUG CHANGED → RENAME FOLDER
+    // ------------------------------
+
+    console.log("new slug: ", newSlug);
+    console.log("old slug: ", oldSlug);
+    
+    
+    
+    if (newSlug !== oldSlug) {
+      const oldPath = path.join(process.cwd(), `uploads/companies/${oldSlug}`);
+      const newPath = path.join(process.cwd(), `uploads/companies/${newSlug}`);
+    
+    
+      console.log("old PATH", oldPath);
+      console.log("new PATH", newPath);
+
+
+      if (fs.existsSync(oldPath)) {
+        fs.renameSync(oldPath, newPath);
+      }
+
+      company.slug = newSlug;
+
+      // update logo path also
+      if (company.logo) {
+        company.logo = company.logo.replace(`/companies/${oldSlug}`, `/companies/${newSlug}`);
+      }
+    }
+
+    // ------------------------------
+    // HANDLE LOGO FILE (OPTIONAL)
+    // ------------------------------
+    if (req.file) {
+      const normalized = req.file.path.replace(/\\/g, "/");
+      company.logo = "/uploads" + normalized.split("uploads")[1];
+    }
 
     await company.save();
 

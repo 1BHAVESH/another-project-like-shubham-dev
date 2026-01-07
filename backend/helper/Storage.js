@@ -129,11 +129,16 @@ export const deleteOldImage = () => (req, res, next) => {
 
     if (!oldImage) return next();
 
+    console.log("old image = ", oldImage);
+    
+
     const filePath = path.join(process.cwd(), oldImage);
 
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
+
+    // throw Error("Hello")
 
     next();
   } catch (err) {
@@ -178,7 +183,17 @@ export const uploadCompanyLogo = uploadTo({
     console.log("req.body", req.body);
     
 
-    const slug = slugify(req.body.slug);
+    let slug;
+
+    if(!req.body.slug){
+      slug = slugify(req.body.name)
+      
+    }
+
+    slug = req.body.slug
+
+
+    //  throw Error("error")
 
     console.log("slug", slug);
     

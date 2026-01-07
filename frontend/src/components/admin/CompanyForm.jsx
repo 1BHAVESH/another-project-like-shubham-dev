@@ -163,12 +163,13 @@ const CompanyForm = ({ onCancel, company, isEditing, isEdit }) => {
     // EDIT MODE
 
     if (selectedLogo) {
+      formData.append("slug", company.slug);
       formData.append("logo", selectedLogo);
       formData.append("oldImage", company.logo);
     }
 
     try {
-      formData.append("slug", company.slug);
+      
      const respone =  await updateData({
         url: `/company/${company._id}`,
         body: formData,
