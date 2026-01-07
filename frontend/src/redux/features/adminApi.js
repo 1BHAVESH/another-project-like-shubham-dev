@@ -16,7 +16,7 @@ export const adminApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Admin", "Banner", "Project", "Career", "Faq", "Media"],
+  tagTypes: ["Admin", "Banner", "Project", "Career", "Faq", "Media", "Company"],
   endpoints: (builder) => ({
     adminLogin: builder.mutation({
       query: (credentials) => ({

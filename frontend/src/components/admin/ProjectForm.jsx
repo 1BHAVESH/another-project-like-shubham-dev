@@ -13,10 +13,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
- 
   useCreateDataMutation,
   useUpdateDataMutation,
-  
 } from "@/redux/features/adminApi";
 import { toast } from "sonner";
 
@@ -280,29 +278,29 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
     setSelectedVideo(null);
   };
 
-const handleImageChange = (e, setPreview, setSelected, maxSizeMB = 5) => {
-  const file = e.target.files[0];
-  if (file) {
-    const maxSize = maxSizeMB * 1024 * 1024; // Convert MB to bytes
-    
-    if (file.size > maxSize) {
-      toast.error(`Image size must be less than ${maxSizeMB}MB`);
-      e.target.value = null;
-      return;
+  const handleImageChange = (e, setPreview, setSelected, maxSizeMB = 5) => {
+    const file = e.target.files[0];
+    if (file) {
+      const maxSize = maxSizeMB * 1024 * 1024; // Convert MB to bytes
+
+      if (file.size > maxSize) {
+        toast.error(`Image size must be less than ${maxSizeMB}MB`);
+        e.target.value = null;
+        return;
+      }
+
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please upload an image file");
+        e.target.value = null;
+        return;
+      }
+
+      setSelected(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setPreview(reader.result);
+      reader.readAsDataURL(file);
     }
-    
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please upload an image file");
-      e.target.value = null;
-      return;
-    }
-    
-    setSelected(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setPreview(reader.result);
-    reader.readAsDataURL(file);
-  }
-};
+  };
 
   const handleAmenityIconChange = (e, index) => {
     const file = e.target.files[0];
@@ -668,13 +666,21 @@ const handleImageChange = (e, setPreview, setSelected, maxSizeMB = 5) => {
       });
 
       if (isEditing) {
-        const response  = await updateData({ url: `/projects/${project._id}`, body: formData,  tag: "Project" }).unwrap();
+        const response = await updateData({
+          url: `/projects/${project._id}`,
+          body: formData,
+          tag: "Project",
+        }).unwrap();
         toast.success("Project updated successfully!");
       } else {
-        const response = await createData({  url: "/projects", body: formData,  tag: "Project"}).unwrap();
+        const response = await createData({
+          url: "/projects",
+          body: formData,
+          tag: "Project",
+        }).unwrap();
 
         console.log("create project", response);
-        
+
         toast.success("Project created successfully!");
       }
 
@@ -694,7 +700,7 @@ const handleImageChange = (e, setPreview, setSelected, maxSizeMB = 5) => {
     setPreview,
     setSelected,
     required,
-    maxSizeMB = 5
+    maxSizeMB = 5,
   }) => (
     <div className="space-y-2">
       <Label>
@@ -727,7 +733,9 @@ const handleImageChange = (e, setPreview, setSelected, maxSizeMB = 5) => {
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={(e) => handleImageChange(e, setPreview, setSelected, maxSizeMB)}
+            onChange={(e) =>
+              handleImageChange(e, setPreview, setSelected, maxSizeMB)
+            }
           />
         </label>
       )}
@@ -1528,31 +1536,35 @@ const handleImageChange = (e, setPreview, setSelected, maxSizeMB = 5) => {
           </div>
 
           {/* Form Actions */}
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="bg-[#d4af37] text-black hover:bg-[#c4a137] cursor-pointer"
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              className="bg-[#d4af37] text-black hover:bg-[#c4a137] cursor-pointer"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                  {isEditing ? "Updating..." : "Creating..."}
-                </span>
-              ) : (
-                <span>{isEditing ? "Update Project" : "Create Project"}</span>
-              )}
-            </Button>
-          </DialogFooter>
+          {/* Form Actions - STICKY BUTTON BAR */}
+          <div className="sticky -bottom-7 left-0 right-0 h-18 bg-zinc-900 border-t border-zinc-800 pt-4 mt-6">
+            <div className="flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="bg-[#d4af37] text-black hover:bg-[#c4a137] cursor-pointer"
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+
+              <Button
+                type="submit"
+                className="bg-[#d4af37] text-black hover:bg-[#c4a137] cursor-pointer"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    {isEditing ? "Updating..." : "Creating..."}
+                  </span>
+                ) : (
+                  <span>{isEditing ? "Update Project" : "Create Project"}</span>
+                )}
+              </Button>
+            </div>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

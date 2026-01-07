@@ -1,13 +1,23 @@
-import React from "react";
+import React, { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { X, Upload } from "lucide-react";
+import {
+  useCreateDataMutation,
+  useUpdateDataMutation,
+} from "@/redux/features/adminApi";
 
-const CompanyForm = ({ onCancel, company, isEditing }) => {
-  const [logoPreview, setLogoPreview] = React.useState(
-    company?.logo || null
-  );
-  const [selectedLogo, setSelectedLogo] = React.useState(null);
+const API_URL = import.meta.env.VITE_API_URL || " http://localhost:3001/";
+
+const CompanyForm = ({ onCancel, company, isEditing, isEdit }) => {
+  // console.log(company);
+
+  console.log(isEdit);
+
+  const [createData] = useCreateDataMutation();
+  const [updateData, { isLoading }] = useUpdateDataMutation();
+  const [logoPreview, setLogoPreview] = useState(company?.logo || null);
+  const [selectedLogo, setSelectedLogo] = useState(null);
 
   const formik = useFormik({
     initialValues: {
@@ -31,13 +41,9 @@ const CompanyForm = ({ onCancel, company, isEditing }) => {
 
     validationSchema: Yup.object({
       name: Yup.string()
-        .trim()
-        .strict(true)
-        .matches(/\S/, "Spaces only are not allowed")
-        .min(2, "Min 2 characters")
+        .transform((value) => value?.trim())
+        .min(2, "Name must be at least 2 characters")
         .required("Company name is required"),
-
-      logo: Yup.string().url("Invalid logo URL").nullable(),
 
       shortDescription: Yup.string()
         .trim()
@@ -54,9 +60,7 @@ const CompanyForm = ({ onCancel, company, isEditing }) => {
         .min(10, "Min 10 characters")
         .required("Description is required"),
 
-      email: Yup.string()
-        .email("Invalid email")
-        .required("Email is required"),
+      email: Yup.string().email("Invalid email").required("Email is required"),
 
       phone: Yup.string()
         .matches(/^\d{10,}$/, "Enter valid phone number")
@@ -81,7 +85,7 @@ const CompanyForm = ({ onCancel, company, isEditing }) => {
 
     onSubmit: (values) => {
       console.log(values);
-      alert("Company " + (isEditing ? "Updated" : "Created") + " Successfully!");
+      // alert("Company " + (isEditing ? "Updated" : "Created") + " Successfully!");
       onCancel();
     },
   });
@@ -106,13 +110,80 @@ const CompanyForm = ({ onCancel, company, isEditing }) => {
     formik.setFieldValue("logo", "");
   };
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = async (e) => {
     e.preventDefault();
-    formik.handleSubmit(e);
+
+    await formik.submitForm();
+
+    if (Object.keys(formik.errors).length > 0) return;
+
+    const formData = new FormData();
+
+    formData.append("name", formik.values.name);
+    formData.append("email", formik.values.email);
+    formData.append("phone", formik.values.phone);
+    formData.append("shortDescription", formik.values.shortDescription);
+    formData.append("description", formik.values.description);
+    formData.append("website", formik.values.website);
+    formData.append("establishedOn", formik.values.establishedOn);
+    formData.append("status", formik.values.status);
+
+    formData.append("street", formik.values.address.street);
+    formData.append("city", formik.values.address.city);
+    formData.append("state", formik.values.address.state);
+    formData.append("country", formik.values.address.country);
+    formData.append("pincode", formik.values.address.pincode);
+
+    // CREATE MODE
+
+    if (!isEdit) {
+      if (!selectedLogo) {
+        alert("Logo required");
+        return;
+      }
+
+      formData.append("logo", selectedLogo);
+
+      try {
+        await createData({
+          url: "/company",
+          body: formData,
+          tag: "Company",
+        }).unwrap();
+
+        onCancel();
+      } catch (err) {
+        console.log(err);
+        alert("Create failed");
+      }
+
+      return;
+    }
+
+    // EDIT MODE
+
+    if (selectedLogo) {
+      formData.append("logo", selectedLogo);
+      formData.append("oldImage", company.logo);
+    }
+
+    try {
+      formData.append("slug", company.slug);
+     const respone =  await updateData({
+        url: `/company/${company._id}`,
+        body: formData,
+        tag: "Company",
+      }).unwrap();
+
+      onCancel();
+    } catch (err) {
+      console.log(err);
+      alert("Update failed");
+    }
   };
 
   return (
-    <div className="bg-zinc-900 text-white p-6 rounded-lg max-w-4xl mx-auto max-h-[90vh] overflow-y-auto">
+    <div className="bg-zinc-900 text-white p-6 rounded-lg max-w-xl mx-auto max-h-[70vh] overflow-y-auto relative">
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-white">
           {isEditing ? "Edit Company" : "Add New Company"}
@@ -189,20 +260,20 @@ const CompanyForm = ({ onCancel, company, isEditing }) => {
         {/* Logo Section */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-[#d4af37]">Logo</h3>
-          
-          <div className="space-y-2">
+
+          <div className="space-y-2 flex flex-col">
             <label className="text-sm text-zinc-300">Company Logo</label>
             {logoPreview ? (
               <div className="relative inline-block">
                 <img
-                  src={logoPreview}
+                  src={selectedLogo ? logoPreview : `${API_URL}${logoPreview}`}
                   alt="Logo Preview"
                   className="w-32 h-32 object-contain rounded-lg border border-zinc-700 bg-zinc-800 p-2"
                 />
                 <button
                   type="button"
                   onClick={removeLogo}
-                  className="absolute -top-2 -right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600 cursor-pointer"
+                  className="absolute top-1 right-[391px] p-1 bg-red-500 rounded-full text-white hover:bg-red-600 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -240,9 +311,12 @@ const CompanyForm = ({ onCancel, company, isEditing }) => {
               maxLength={100}
             />
             <div className="flex justify-between items-center">
-              {formik.touched.shortDescription && formik.errors.shortDescription && (
-                <p className="text-red-500 text-sm">{formik.errors.shortDescription}</p>
-              )}
+              {formik.touched.shortDescription &&
+                formik.errors.shortDescription && (
+                  <p className="text-red-500 text-sm">
+                    {formik.errors.shortDescription}
+                  </p>
+                )}
               <p className="text-xs text-zinc-400 ml-auto">
                 {formik.values.shortDescription?.length || 0}/100
               </p>
@@ -260,7 +334,9 @@ const CompanyForm = ({ onCancel, company, isEditing }) => {
               placeholder="Enter detailed company description"
             />
             {formik.touched.description && formik.errors.description && (
-              <p className="text-red-500 text-sm">{formik.errors.description}</p>
+              <p className="text-red-500 text-sm">
+                {formik.errors.description}
+              </p>
             )}
           </div>
         </div>
@@ -309,12 +385,11 @@ const CompanyForm = ({ onCancel, company, isEditing }) => {
                 {...formik.getFieldProps("establishedOn")}
                 className="w-full p-3 rounded-lg bg-zinc-800 text-white border border-zinc-700 focus:outline-none focus:ring-2 focus:ring-[#d4af37]"
               />
-              {formik.touched.establishedOn &&
-                formik.errors.establishedOn && (
-                  <p className="text-red-500 text-sm">
-                    {formik.errors.establishedOn}
-                  </p>
-                )}
+              {formik.touched.establishedOn && formik.errors.establishedOn && (
+                <p className="text-red-500 text-sm">
+                  {formik.errors.establishedOn}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -331,7 +406,7 @@ const CompanyForm = ({ onCancel, company, isEditing }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800">
+        <div className="sticky -bottom-6 bg-zinc-900 pt-4 border-t border-zinc-800 flex justify-end gap-3">
           <button
             type="button"
             onClick={onCancel}
@@ -345,7 +420,7 @@ const CompanyForm = ({ onCancel, company, isEditing }) => {
             onClick={handleFormSubmit}
             className="px-6 py-2 rounded-lg bg-[#d4af37] text-black font-medium hover:bg-[#c4a137] transition-colors cursor-pointer"
           >
-            {isEditing ? "Update Company" : "Create Company"}
+            {isEdit ? "Update Company" : "Create Company"}
           </button>
         </div>
       </div>

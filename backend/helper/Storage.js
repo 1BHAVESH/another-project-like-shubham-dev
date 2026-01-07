@@ -7,7 +7,6 @@ import {
   SUPPORTED_FORMATS_IMAGE,
   SUPPORTED_FORMATS_DOC,
 } from "./formValidConfig.js";
-import { log } from "console";
 
 
 // Required for __dirname in ES Modules
@@ -15,11 +14,31 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 
-// 🔹 MAIN FUNCTION
-export const uploadTo = ({ dir = "uploads", isImage = false, isDoc = false, fileSize = 2 }) => {
+const slugify = (str = "") =>
+  str
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")   // remove special chars
+    .replace(/\s+/g, "-")           // spaces → hyphen
+    .replace(/-+/g, "-");      
+
+
+
+// GENERIC UPLOAD FUNCTION  
+
+export const uploadTo = ({
+  dir = "uploads",
+  isImage = false,
+  isDoc = false,
+  fileSize = 2,
+  getDir, // 👈 NEW (DYNAMIC PATH SUPPORT)
+}) => {
 
   const maxAllowSize = fileSize * Math.pow(1024, 2);
 
+
+  // ---------------- FILE FILTER ----------------
   const fileFilter = (req, file, cb) => {
 
     const reqSize = parseInt(req.headers["content-length"]);
@@ -43,18 +62,32 @@ export const uploadTo = ({ dir = "uploads", isImage = false, isDoc = false, file
   };
 
 
+
+  // ---------------- STORAGE CONFIG ----------------
   const storage = multer.diskStorage({
 
     destination: (req, file, cb) => {
-      const uploadPath = path.join(__dirname, `../uploads/${dir}`);
+
+      // 🟢 agar getDir diya hai → dynamic folder
+      let finalDir = dir;
+
+      if (getDir) {
+        finalDir = getDir(req, file);
+      }
+      
+
+      const uploadPath = path.join(__dirname, `../uploads/${finalDir}`);
+
+      console.log("uploadToPath: ", uploadPath);
+      
 
       fs.mkdirSync(uploadPath, { recursive: true });
 
       cb(null, uploadPath);
     },
 
-    filename: (req, file, cb) => {
 
+    filename: (req, file, cb) => {
       const unique =
         Date.now() +
         "-" +
@@ -66,11 +99,14 @@ export const uploadTo = ({ dir = "uploads", isImage = false, isDoc = false, file
   });
 
 
+
+  // ---------------- MULTER INSTANCE ----------------
   const upload = multer({
     storage,
     fileFilter,
     limits: { fileSize: maxAllowSize },
   });
+
 
 
   return {
@@ -82,33 +118,88 @@ export const uploadTo = ({ dir = "uploads", isImage = false, isDoc = false, file
 
 
 
-// 🔥 DELETE FILE
-export const deleteOldImage = (folderName = "blogs") => (req, res, next) => {
-    try {
-      const oldImage = req.body?.oldImage || req.query?.oldImage;
 
-      console.log("oldImage", oldImage);
-      
 
-      if (!oldImage) return next();
 
-      const filePath = path.join(process.cwd(),oldImage);
-console.log(path.join(process.cwd()));
+// DELETE OLD FILE 
 
-      console.log("filePath", filePath);
-      
+export const deleteOldImage = () => (req, res, next) => {
+  try {
+    const oldImage = req.body?.oldImage || req.query?.oldImage;
 
-      if (fs.existsSync(filePath)) {
-        console.log("hiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii");
-        
-        fs.unlinkSync(filePath);
-      }
+    if (!oldImage) return next();
 
-      next();
-    } catch (err) {
-      console.log("Delete Error:", err);
-      next();
+    const filePath = path.join(process.cwd(), oldImage);
+
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
     }
-  };
-export const uploadBlogImage = uploadTo({dir: "blogs", isImage: true, fileSize: 5 });     // MB
-export const uploadBanner = uploadTo({dir: "banners", isImage: true, fileSize: 5 }); 
+
+    next();
+  } catch (err) {
+    console.log("Delete Error:", err);
+    next();
+  }
+};
+
+
+
+
+
+// STATIC USE CASES 
+
+export const uploadBlogImage = uploadTo({
+  dir: "blogs",
+  isImage: true,
+  fileSize: 5,
+});
+
+
+export const uploadBanner = uploadTo({
+  dir: "banners",
+  isImage: true,
+  fileSize: 5,
+});
+
+
+
+
+
+// REAL ESTATE — DYNAMIC COMPANY + PROJECT 
+
+
+
+export const uploadCompanyLogo = uploadTo({
+  isImage: true,
+  fileSize: 5,
+
+  getDir: (req, file) => {
+
+    console.log("req.body", req.body);
+    
+
+    const slug = slugify(req.body.slug);
+
+    console.log("slug", slug);
+    
+
+    return `companies/${slug}/logo`;
+  },
+});
+
+export const uploadProjectMedia = uploadTo({
+  isImage: true,
+  fileSize: 20,
+
+  getDir: (req, file) => {
+
+    const { companyName, projectName, type } = req.body;
+
+    // SAFETY fallback
+    const c = companyName || "unknown-company";
+    const p = projectName || "unknown-project";
+    const t = type || "misc";
+
+    return `companies/${c}/projects/${p}/${t}`;
+  },
+});

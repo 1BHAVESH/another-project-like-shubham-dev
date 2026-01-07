@@ -10,8 +10,18 @@ const companySchema = new mongoose.Schema(
     },
 
     logo: {
-      type: String,   // cloudinary / image url
+      type: String,   //  image url
       default: "",
+    },
+
+    shortDescription:{
+        type: String,
+      default: "",
+    },
+     slug: {
+      type: String,
+      required: true,
+      unique: true,
     },
 
     description: {
