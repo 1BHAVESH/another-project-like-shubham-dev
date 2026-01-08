@@ -105,7 +105,7 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
   const [selectedFloorPlan, setSelectedFloorPlan] = useState(null);
   const [buildingImagePreview, setBuildingImagePreview] = useState(null);
   const [selectedBuildingImage, setSelectedBuildingImage] = useState(null);
-  const [galleryPreviews, setGalleryPreviews] = useState([]);
+  const [galleryPreviews, setGalleryPreviews] = useState([{}]);
   const [selectedGalleryImages, setSelectedGalleryImages] = useState([]);
 
   // Amenity icon states - array to store icon for each amenity
@@ -213,7 +213,12 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
 
       const existingGallery = project.galleryImages || [];
       setExistingGalleryImages(existingGallery);
-      setGalleryPreviews(existingGallery.map(getImageUrl));
+      setGalleryPreviews(
+        existingGallery.map((img) => ({
+          image: img,
+          fullUrl: getImageUrl(img),
+        }))
+      );
 
       if (project.amenities && project.amenities.length > 0) {
         const iconPreviews = project.amenities.map((amenity) =>
@@ -555,7 +560,7 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
       const formData = new FormData();
 
       // Basic fields
-      formData.append("companyId", company._id)
+      formData.append("companyId", company._id);
       formData.append("companySlug", company.slug);
       formData.append("title", data.title);
       formData.append("tagline", data.tagline);
@@ -651,7 +656,7 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
         if (project == null) {
           console.log("project");
         } else {
-           formData.append("oldImage", project.imageUrl);
+          formData.append("oldImage", project.imageUrl);
           console.log("mood");
         }
       }
@@ -664,7 +669,11 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
         formData.append("floorPlanImage", selectedFloorPlan);
       if (selectedBuildingImage)
         formData.append("buildingImage", selectedBuildingImage);
-      selectedGalleryImages.forEach((img) => formData.append("gallery", img));
+
+      if (selectedGalleryImages.length > 0) {
+        selectedGalleryImages.forEach((img) => formData.append("gallery", img));
+      } else {
+      }
 
       // Amenity icons for manually added
       selectedAmenityIcons.forEach((icon, index) => {
@@ -690,13 +699,16 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
       if (selectedVideo) formData.append("video", selectedVideo);
 
       deletedGalleryImages.forEach((img) => {
-         formData.append("oldImages", img);
+        formData.append("oldImages", img);
       });
 
       if (isEditing) {
         // console.log("selected image", selectedImage);
 
-        const response = await updateData({
+        console.log("deletedGalleryImages",deletedGalleryImages);
+        
+
+        const response = await jjkkupdateData({
           url: `/projects/${project._id}`,
           body: formData,
           tag: "Project",
@@ -748,6 +760,7 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
           <button
             type="button"
             onClick={() => {
+              console.log(preview);
               setPreview(null);
               setSelected(null);
             }}
@@ -1162,13 +1175,16 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
                 {galleryPreviews.map((preview, index) => (
                   <div key={index} className="relative">
                     <img
-                      src={preview}
+                      src={preview.fullUrl}
                       alt={`Gallery ${index}`}
                       className="w-full h-20 object-cover rounded-lg"
                     />
                     <button
                       type="button"
-                      onClick={() => removeGalleryImage(index)}
+                      onClick={() => {
+                        console.log(galleryPreviews);
+                        removeGalleryImage(index);
+                      }}
                       className="absolute cursor-pointer top-1 right-1 p-0.5 bg-red-500 rounded-full text-white hover:bg-red-600"
                     >
                       <X className="w-3 h-3" />
