@@ -45,7 +45,7 @@ import AdminCompany from "@/pages/admin/AdminCompany";
 export default function AppRoutes() {
   return (
     <BrowserRouter>
-    <ScrollToTop />
+      <ScrollToTop />
       <Routes>
         {/* COMMON LAYOUT WITH NAVBAR */}
         <Route element={<Layout />}>
@@ -64,21 +64,24 @@ export default function AppRoutes() {
           <Route path="/medeia-2" element={<Media1 />} />
           <Route path="/faq" element={<Faq />} />
           <Route path="/project/:id" element={<ProjectDetail />} />
-          <Route path="/about-shubham-developer" element={<AboutShubhamDeveloper />} />
+          <Route
+            path="/about-shubham-developer"
+            element={<AboutShubhamDeveloper />}
+          />
           <Route path="/our-team" element={<OurFounder />} />
           <Route path="/join-venture" element={<JoinVenture />} />
-          <Route path="/media" element={<Media1 />}/>        
-          </Route>
+          <Route path="/media" element={<Media1 />} />
+        </Route>
 
         {/* ADMIN ROUTES */}
         <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/forgot-password" element={<ForgotPassword />} />
+        <Route path="/admin/forgot-password" element={<ForgotPassword />} />
 
         {/* <Route path="/admin/register" element={<AdminRegister />} /> */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="banners" element={<BannerManagement />} />
-          <Route path="projects" element={<ProjectManagement />} />
+          <Route path=":companyId/projects" element={<ProjectManagement />} />
           <Route path="company" element={<AdminCompany />} />
           <Route path="home-page" element={<HomePage />} />
           <Route path="career" element={<CarrerAdmin />} />

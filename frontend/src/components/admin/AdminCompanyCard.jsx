@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import CompanyForm from "./CompanyForm";
+import { useNavigate } from "react-router-dom";
 
 const API_URL = import.meta.env.VITE_API_URL || " http://localhost:3008/";
 
@@ -16,22 +17,27 @@ const AdminCompanyCard = ({
   onEdit,
   onDelete,
 }) => {
+  const navigate = useNavigate();
   const [openForm, setOpenForm] = useState(false);
 
   const edit = true
 
   return (
     <>
-      <div className="block max-w-sm p-6 border border-default rounded-xl border-gray-500 shadow-xs">
+      <div
+      
+       className="block max-w-sm p-6 border border-default rounded-xl border-gray-500 shadow-xs">
         {/* Company Logo */}
         <img
           src={`${API_URL}${logo}`}
           alt={name}
-          className="w-82 h-32 rounded-md object-cover border border-neutral-700"
+          className="w-82 h-32 rounded-md object-cover cursor-pointer border border-neutral-700"
+          onClick={()=> navigate(`/admin/${company._id}/projects`)}
         />
 
         {/* Company Name */}
-        <h2 className="text-white mt-6 mb-2 text-xl font-semibold  ">{name}</h2>
+        <h2 className="text-white mt-6 mb-2 text-xl font-semibold  "
+        onClick={()=> navigate(`/admin/${company._id}/projects`)}>{name}</h2>
 
         {/* Status & Switch */}
         <div className="flex items-center mt-3 mb-2 gap-3">
@@ -51,7 +57,8 @@ const AdminCompanyCard = ({
         </div>
 
         {/* Total Projects */}
-        <p className="text-gray-400 text-sm mt-1">
+        <p className="text-gray-400 text-sm mt-1"
+        onClick={()=> navigate(`/admin/${company._id}/projects`)}>
           Total Projects: <span className="text-white">{5}</span>
         </p>
 

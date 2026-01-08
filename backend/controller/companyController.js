@@ -1,23 +1,50 @@
 import { Company } from "../models/Compnies.js";
 
-
+import { fileURLToPath } from "url";
 import fs from "fs";
 import path from "path";
 
+const fsPromises = fs.promises;
+
+// __dirname fix for ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export const getCompany = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // ---------- FIND COMPANY ----------
+    const company = await Company.findById(id);
+
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: "Company not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      company,
+    });
+  } catch (err) {
+    console.log(err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
 export const getCompanies = async (req, res) => {
   try {
-
     // Query Params
-    let {
-      page = 1,
-      limit = 10,
-      search = "",
-      status
-    } = req.query;
+    let { page = 1, limit = 10, search = "", status } = req.query;
 
     page = Number(page);
     limit = Number(limit);
-
 
     // ---------- FILTER ----------
     const filter = {};
@@ -30,17 +57,14 @@ export const getCompanies = async (req, res) => {
       filter.status = status;
     }
 
-
     // ---------- COUNT ----------
     const total = await Company.countDocuments(filter);
-
 
     // ---------- DATA ----------
     const companies = await Company.find(filter)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
-
 
     return res.status(200).json({
       success: true,
@@ -50,7 +74,6 @@ export const getCompanies = async (req, res) => {
       count: companies.length,
       companies,
     });
-
   } catch (err) {
     console.log(err);
 
@@ -59,9 +82,7 @@ export const getCompanies = async (req, res) => {
       message: "Server error",
     });
   }
-
 };
-
 
 const slugify = (str = "") =>
   str
@@ -90,7 +111,6 @@ export const createCompany = async (req, res) => {
       pincode,
     } = req.body;
 
-
     // ---------------- VALIDATION ----------------
     if (
       !name ||
@@ -115,18 +135,14 @@ export const createCompany = async (req, res) => {
       });
     }
 
-   // 1. normalize slashes
-const normalized = req.file.path.replace(/\\/g, "/");
+    // 1. normalize slashes
+    const normalized = req.file.path.replace(/\\/g, "/");
 
-// 2. remove system prefix
-const relative = normalized.split("uploads")[1];
+    // 2. remove system prefix
+    const relative = normalized.split("uploads")[1];
 
-// 3. final frontend path
-const logoPath = "/uploads" + relative;
-
-    
-    
-
+    // 3. final frontend path
+    const logoPath = "/uploads" + relative;
 
     // -------------- CHECK DUPLICATE --------------
     const exists = await Company.findOne({ email });
@@ -137,9 +153,6 @@ const logoPath = "/uploads" + relative;
         message: "Company already exists with this email",
       });
     }
-
-    
-
 
     // -------------- SAVE DATA ---------------------
     const company = await Company.create({
@@ -161,16 +174,14 @@ const logoPath = "/uploads" + relative;
         pincode,
       },
 
-      logo: logoPath
+      logo: logoPath,
     });
-
 
     return res.status(201).json({
       success: true,
       message: "Company created successfully",
       company,
     });
-
   } catch (err) {
     console.log(err);
 
@@ -180,10 +191,6 @@ const logoPath = "/uploads" + relative;
     });
   }
 };
-
-
-
-
 
 export const updateCompany = async (req, res) => {
   try {
@@ -238,26 +245,26 @@ export const updateCompany = async (req, res) => {
     
     
     
-    if (newSlug !== oldSlug) {
-      const oldPath = path.join(process.cwd(), `uploads/companies/${oldSlug}`);
-      const newPath = path.join(process.cwd(), `uploads/companies/${newSlug}`);
+    // if (newSlug !== oldSlug) {
+    //   const oldPath = path.join(process.cwd(), `uploads/companies/${oldSlug}`);
+    //   const newPath = path.join(process.cwd(), `uploads/companies/${newSlug}`);
     
     
-      console.log("old PATH", oldPath);
-      console.log("new PATH", newPath);
+    //   console.log("old PATH", oldPath);
+    //   console.log("new PATH", newPath);
 
 
-      if (fs.existsSync(oldPath)) {
-        fs.renameSync(oldPath, newPath);
-      }
+    //   // if (fs.existsSync(oldPath)) {
+    //   //   fs.renameSync(oldPath, newPath);
+    //   // }
 
-      company.slug = newSlug;
+    //   // company.slug = newSlug;
 
-      // update logo path also
-      if (company.logo) {
-        company.logo = company.logo.replace(`/companies/${oldSlug}`, `/companies/${newSlug}`);
-      }
-    }
+    //   // update logo path also
+    //   if (company.logo) {
+    //     company.logo = company.logo.replace(`/companies/${oldSlug}`, `/companies/${newSlug}`);
+    //   }
+    // }
 
     // ------------------------------
     // HANDLE LOGO FILE (OPTIONAL)

@@ -1,6 +1,8 @@
 import Project from "../models/Project.js";
 import fs from "fs";
 import path from "path";
+import { Company } from "../models/Compnies.js";
+import { deleteFiles } from "../helper/Storage.js";
 
 export const getAllProjects = async (req, res) => {
   try {
@@ -51,7 +53,6 @@ export const getProjectById = async (req, res) => {
 export const createProject = async (req, res) => {
   try {
     const {
-      name,
       title,
       slug,
       tagline,
@@ -63,6 +64,7 @@ export const createProject = async (req, res) => {
       area,
       propertyTypes,
       contactNumber,
+      videoUrl,
       amenities,
       highlights,
       nearbyLocations,
@@ -71,49 +73,99 @@ export const createProject = async (req, res) => {
       isFeatured,
       order,
       amenityIconIndexes,
+      companySlug,
+      projectSlug,
+      companyId
     } = req.body;
 
-    console.log(amenities);
-
-    const projectTitle = name || title;
-
-    if (!req.files || !req.files.image) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Image is required" });
+    // Validation
+    if (!title) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Project title is required" 
+      });
     }
 
-    const imageUrl = `/uploads/${req.files.image[0].filename}`;
-    const brochureUrl = req.files.brochure
-      ? `/uploads/${req.files.brochure[0].filename}`
-      : null;
-    const priceSheetUrl = req.files.priceSheet
-      ? `/uploads/${req.files.priceSheet[0].filename}`
-      : null;
-    const logoUrl = req.files.logo
-      ? `/uploads/${req.files.logo[0].filename}`
-      : null;
-    const videoFileUrl = req.files.video
-      ? `/uploads/${req.files.video[0].filename}`
-      : null;
-    const overviewImageUrl = req.files.overviewImage
-      ? `/uploads/${req.files.overviewImage[0].filename}`
-      : null;
-    const masterPlanImageUrl = req.files.masterPlanImage
-      ? `/uploads/${req.files.masterPlanImage[0].filename}`
-      : null;
-    const floorPlanImageUrl = req.files.floorPlanImage
-      ? `/uploads/${req.files.floorPlanImage[0].filename}`
-      : null;
-    const buildingImageUrl = req.files.buildingImage
-      ? `/uploads/${req.files.buildingImage[0].filename}`
+    if (!req.files || !req.files.image) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Main project image is required" 
+      });
+    }
+
+    // Generate slug if not provided
+    const finalSlug = slug || projectSlug || title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-");
+
+    console.log("📝 Creating project:", title);
+    console.log("🏢 Company Slug:", companySlug);
+    console.log("📂 Project Slug:", finalSlug);
+
+    // ========== HELPER FUNCTION TO GET RELATIVE PATH ==========
+    const getRelativePath = (file) => {
+      if (!file) return null;
+      // Extract path after 'uploads/'
+      const fullPath = file.path.replace(/\\/g, '/');
+      const uploadsIndex = fullPath.indexOf('uploads/');
+      return uploadsIndex !== -1 ? `/${fullPath.substring(uploadsIndex)}` : `/${file.path}`;
+    };
+
+    // ========== PROCESS FILE UPLOADS ==========
+    
+    // Main Image (required)
+    const imageUrl = getRelativePath(req.files.image[0]);
+
+    // Optional Images
+    const logoUrl = req.files.logo 
+      ? getRelativePath(req.files.logo[0]) 
       : null;
 
-    const galleryImages = req.files.galleryImages
-      ? req.files.galleryImages.map((file) => `/uploads/${file.filename}`)
+    const overviewImageUrl = req.files.overviewImage 
+      ? getRelativePath(req.files.overviewImage[0]) 
+      : null;
+
+    const masterPlanImageUrl = req.files.masterPlanImage 
+      ? getRelativePath(req.files.masterPlanImage[0]) 
+      : null;
+
+    const floorPlanImageUrl = req.files.floorPlanImage 
+      ? getRelativePath(req.files.floorPlanImage[0]) 
+      : null;
+
+    const buildingImageUrl = req.files.buildingImage 
+      ? getRelativePath(req.files.buildingImage[0]) 
+      : null;
+
+    // Gallery Images
+    const galleryImages = req.files.gallery
+      ? req.files.gallery.map(file => getRelativePath(file))
       : [];
 
-    // Process amenities with icon uploads
+    // Documents
+    const brochureUrl = req.files.brochure
+      ? getRelativePath(req.files.brochure[0])
+      : null;
+
+    const priceSheetUrl = req.files.priceSheet
+      ? getRelativePath(req.files.priceSheet[0])
+      : null;
+
+    // Video File (not URL)
+    const videoFileUrl = req.files.video
+      ? getRelativePath(req.files.video[0])
+      : null;
+
+    console.log("📁 Files processed:");
+    console.log("  - Main Image:", imageUrl);
+    console.log("  - Gallery:", galleryImages.length, "images");
+    console.log("  - Video File:", videoFileUrl || "None");
+    console.log("  - Brochure:", brochureUrl || "None");
+
+    // ========== PROCESS AMENITIES WITH ICONS ==========
+    
     let parsedAmenities = amenities ? JSON.parse(amenities) : [];
 
     if (req.files?.amenityIcons && amenityIconIndexes) {
@@ -122,32 +174,47 @@ export const createProject = async (req, res) => {
         ? amenityIconIndexes
         : [amenityIconIndexes];
 
+      console.log("🎨 Processing amenity icons:");
+      console.log("  - Total icons:", iconFiles.length);
+      console.log("  - Indexes:", indexes);
+
       // Map icon files to their corresponding amenities
       indexes.forEach((index, i) => {
         const amenityIndex = parseInt(index);
         if (iconFiles[i] && parsedAmenities[amenityIndex]) {
-          parsedAmenities[
-            amenityIndex
-          ].icon = `/uploads/${iconFiles[i].filename}`;
+          const iconPath = getRelativePath(iconFiles[i]);
+          parsedAmenities[amenityIndex].icon = iconPath;
+          console.log(`  ✓ Amenity ${amenityIndex} (${parsedAmenities[amenityIndex].name}):`, iconPath);
         }
       });
     }
 
+    // Validate amenities (ensure all have icons)
+    const amenitiesWithoutIcons = parsedAmenities.filter(a => !a.icon);
+    if (amenitiesWithoutIcons.length > 0) {
+      console.warn("⚠️ Some amenities missing icons:", amenitiesWithoutIcons.map(a => a.name));
+      // Remove amenities without icons
+      parsedAmenities = parsedAmenities.filter(a => a.icon);
+    }
+
+    // ========== CREATE PROJECT IN DATABASE ==========
+    
     const project = await Project.create({
-      title: projectTitle,
-      slug,
+      title,
+      slug: finalSlug,
       tagline,
       description,
       location,
       address,
-      status,
+      status: status || "ongoing",
       price,
       area,
       propertyTypes,
       contactNumber,
       imageUrl,
       logoUrl,
-      videoUrl: videoFileUrl,
+      videoUrl: videoUrl || null,        // YouTube/external URL
+      videoFileUrl,                       // Uploaded video file
       overviewImageUrl,
       masterPlanImageUrl,
       floorPlanImageUrl,
@@ -159,15 +226,51 @@ export const createProject = async (req, res) => {
       highlights: highlights ? JSON.parse(highlights) : [],
       nearbyLocations: nearbyLocations ? JSON.parse(nearbyLocations) : [],
       mapEmbedUrl,
-      isActive: isActive !== undefined ? isActive : true,
-      isFeatured: isFeatured !== undefined ? isFeatured : false,
-      order: order || 0,
+      isActive: isActive === 'true' || isActive === true,
+      isFeatured: isFeatured === 'true' || isFeatured === true,
+      order: parseInt(order) || 0,
+      company: companyId
     });
 
-    res.status(201).json({ success: true, data: project });
+    const company = await Company.findById(companyId)
+
+    company.projects.push(project._id)
+
+    await company.save()
+
+    console.log("✅ Project created successfully:", project._id);
+
+    res.status(201).json({ 
+      success: true, 
+      message: "Project created successfully",
+      data: project 
+    });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Server error", error });
+    console.error("❌ Create Project Error:", error);
+    
+    // Provide more specific error messages
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ 
+        success: false, 
+        message: "Validation failed", 
+        errors: messages 
+      });
+    }
+
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Project with this slug already exists" 
+      });
+    }
+
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error while creating project",
+      error: error.message 
+    });
   }
 };
 
@@ -183,7 +286,6 @@ const deleteOldFile = (fileUrl) => {
 export const updateProject = async (req, res) => {
   try {
     const { id } = req.params;
-
     const {
       title,
       slug,
@@ -196,6 +298,7 @@ export const updateProject = async (req, res) => {
       area,
       propertyTypes,
       contactNumber,
+      videoUrl,
       amenities,
       highlights,
       nearbyLocations,
@@ -204,160 +307,184 @@ export const updateProject = async (req, res) => {
       isFeatured,
       order,
       amenityIconIndexes,
+      companySlug,
+      projectSlug,
+      deletedFiles, // ✅ Array of old files to delete
     } = req.body;
 
-    const project = await Project.findById(id);
-
-    if (!project) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Project not found" });
+    // Find existing project
+    const existingProject = await Project.findById(id);
+    if (!existingProject) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Project not found" 
+      });
     }
 
-    // ------------------------
-    // TEXT FIELDS UPDATE
-    // ------------------------
-    if (title !== undefined) project.title = title;
-    if (slug !== undefined) project.slug = slug;
-    if (tagline !== undefined) project.tagline = tagline;
-    if (description !== undefined) project.description = description;
-    if (location !== undefined) project.location = location;
-    if (address !== undefined) project.address = address;
-    if (status !== undefined) project.status = status;
-    if (price !== undefined) project.price = price;
-    if (area !== undefined) project.area = area;
-    if (propertyTypes !== undefined) project.propertyTypes = propertyTypes;
-    if (contactNumber !== undefined) project.contactNumber = contactNumber;
-    if (mapEmbedUrl !== undefined) project.mapEmbedUrl = mapEmbedUrl;
-    if (isActive !== undefined) project.isActive = isActive;
-    if (isFeatured !== undefined) project.isFeatured = isFeatured;
-    if (order !== undefined) project.order = order;
+    console.log("📝 Updating project:", title);
+    console.log("🗑️ Files to delete:", deletedFiles);
 
-    // ------------------------
-    // AMENITIES HANDLING
-    // ------------------------
-    if (amenities) {
-      const parsedAmenities = JSON.parse(amenities);
-
-      if (req.files?.amenityIcons && amenityIconIndexes) {
-        const iconFiles = req.files.amenityIcons;
-        const indexes = Array.isArray(amenityIconIndexes)
-          ? amenityIconIndexes
-          : [amenityIconIndexes];
-
-        indexes.forEach((index, i) => {
-          const amenityIndex = parseInt(index);
-          if (iconFiles[i] && parsedAmenities[amenityIndex]) {
-            deleteOldFile(parsedAmenities[amenityIndex].icon);
-            parsedAmenities[
-              amenityIndex
-            ].icon = `/uploads/${iconFiles[i].filename}`;
-          }
-        });
-      }
-
-      project.amenities = parsedAmenities;
+    // ========== DELETE OLD FILES FIRST ==========
+    if (deletedFiles) {
+      const filesToDelete = Array.isArray(deletedFiles) ? deletedFiles : [deletedFiles];
+      console.log("🗑️ Deleting files:", filesToDelete);
+      deleteFiles(filesToDelete);
     }
 
-    if (highlights) project.highlights = JSON.parse(highlights);
-    if (nearbyLocations) project.nearbyLocations = JSON.parse(nearbyLocations);
+    // ========== HELPER FUNCTION TO GET RELATIVE PATH ==========
+    const getRelativePath = (file) => {
+      if (!file) return null;
+      const fullPath = file.path.replace(/\\/g, '/');
+      const uploadsIndex = fullPath.indexOf('uploads/');
+      return uploadsIndex !== -1 ? `/${fullPath.substring(uploadsIndex)}` : `/${file.path}`;
+    };
 
-    // ------------------------
-    // FILE UPDATES (IMAGE / PDF / VIDEO)
-    // ------------------------
+    // ========== PROCESS FILE UPLOADS ==========
+    
+    // Main Image - if new file uploaded, use it; otherwise keep existing
+    let imageUrl = existingProject.imageUrl;
     if (req.files?.image) {
-      deleteOldFile(project.imageUrl);
-      project.imageUrl = `/uploads/${req.files.image[0].filename}`;
+      imageUrl = getRelativePath(req.files.image[0]);
+      console.log("🖼️ New main image:", imageUrl);
     }
 
-    if (req.files?.brochure) {
-      deleteOldFile(project.brochureUrl);
-      project.brochureUrl = `/uploads/${req.files.brochure[0].filename}`;
+    // Rest of your file processing...
+    const logoUrl = req.files?.logo
+      ? getRelativePath(req.files.logo[0])
+      : existingProject.logoUrl;
+
+    const overviewImageUrl = req.files?.overviewImage
+      ? getRelativePath(req.files.overviewImage[0])
+      : existingProject.overviewImageUrl;
+
+    const masterPlanImageUrl = req.files?.masterPlanImage
+      ? getRelativePath(req.files.masterPlanImage[0])
+      : existingProject.masterPlanImageUrl;
+
+    const floorPlanImageUrl = req.files?.floorPlanImage
+      ? getRelativePath(req.files.floorPlanImage[0])
+      : existingProject.floorPlanImageUrl;
+
+    const buildingImageUrl = req.files?.buildingImage
+      ? getRelativePath(req.files.buildingImage[0])
+      : existingProject.buildingImageUrl;
+
+    // Gallery Images - merge existing with new
+    let galleryImages = [...existingProject.galleryImages];
+    
+    if (req.files?.gallery) {
+      const newGalleryImages = req.files.gallery.map(file => getRelativePath(file));
+      galleryImages = [...galleryImages, ...newGalleryImages];
     }
 
-    if (req.files?.priceSheet) {
-      deleteOldFile(project.priceSheetUrl);
-      project.priceSheetUrl = `/uploads/${req.files.priceSheet[0].filename}`;
-    }
+    // Documents
+    const brochureUrl = req.files?.brochure
+      ? getRelativePath(req.files.brochure[0])
+      : existingProject.brochureUrl;
 
-    if (req.files?.logo) {
-      deleteOldFile(project.logoUrl);
-      project.logoUrl = `/uploads/${req.files.logo[0].filename}`;
-    }
+    const priceSheetUrl = req.files?.priceSheet
+      ? getRelativePath(req.files.priceSheet[0])
+      : existingProject.priceSheetUrl;
 
-    if (req.files?.video) {
-      deleteOldFile(project.videoUrl);
-      project.videoUrl = `/uploads/${req.files.video[0].filename}`;
-    }
+    // Video File
+    const videoFileUrl = req.files?.video
+      ? getRelativePath(req.files.video[0])
+      : existingProject.videoFileUrl;
 
-    if (req.files?.overviewImage) {
-      deleteOldFile(project.overviewImageUrl);
-      project.overviewImageUrl = `/uploads/${req.files.overviewImage[0].filename}`;
-    }
+    // ========== PROCESS AMENITIES WITH ICONS ==========
+    
+    let parsedAmenities = amenities ? JSON.parse(amenities) : existingProject.amenities;
 
-    if (req.files?.masterPlanImage) {
-      deleteOldFile(project.masterPlanImageUrl);
-      project.masterPlanImageUrl = `/uploads/${req.files.masterPlanImage[0].filename}`;
-    }
+    if (req.files?.amenityIcons && amenityIconIndexes) {
+      const iconFiles = req.files.amenityIcons;
+      const indexes = Array.isArray(amenityIconIndexes)
+        ? amenityIconIndexes
+        : [amenityIconIndexes];
 
-    if (req.files?.floorPlanImage) {
-      deleteOldFile(project.floorPlanImageUrl);
-      project.floorPlanImageUrl = `/uploads/${req.files.floorPlanImage[0].filename}`;
-    }
-
-    if (req.files?.buildingImage) {
-      deleteOldFile(project.buildingImageUrl);
-      project.buildingImageUrl = `/uploads/${req.files.buildingImage[0].filename}`;
-    }
-
-    // -------------------------------------------------
-    //   GALLERY IMAGE DELETE — SINGLE & MULTIPLE SUPPORT
-    // -------------------------------------------------
-    // GALLERY IMAGES DELETE (MULTIPLE)
-    if (req.body.deletedImages) {
-      console.log("RAW DELETE:", req.body.deletedImages);
-
-      let deleted = req.body.deletedImages;
-
-      // If string → convert to JSON
-      if (typeof deleted === "string") {
-        try {
-          deleted = JSON.parse(deleted);
-        } catch {
-          deleted = [deleted];
+      indexes.forEach((index, i) => {
+        const amenityIndex = parseInt(index);
+        if (iconFiles[i] && parsedAmenities[amenityIndex]) {
+          const iconPath = getRelativePath(iconFiles[i]);
+          parsedAmenities[amenityIndex].icon = iconPath;
         }
-      }
-
-      console.log("FINAL DELETED ARRAY:", deleted);
-
-      // Delete files
-      deleted.forEach((img) => deleteOldFile(img));
-
-      // Remove from DB
-      project.galleryImages = project.galleryImages.filter(
-        (img) => !deleted.includes(img)
-      );
+      });
     }
 
-    // -------------------------------------------------
-    //  🔥 ADD NEW GALLERY IMAGES (WITHOUT deleting old)
-    // -------------------------------------------------
-    if (req.files?.galleryImages) {
-      const newImages = req.files.galleryImages.map(
-        (file) => `/uploads/${file.filename}`
-      );
-      project.galleryImages = [...project.galleryImages, ...newImages];
-    }
+    // Remove amenities without icons
+    parsedAmenities = parsedAmenities.filter(a => a.icon);
 
-    // ------------------------
-    // SAVE PROJECT
-    // ------------------------
-    const updatedProject = await project.save();
+    // ========== UPDATE PROJECT IN DATABASE ==========
+    
+    const finalSlug = slug || projectSlug || existingProject.slug;
 
-    res.status(200).json({ success: true, data: updatedProject });
+    const updatedProject = await Project.findByIdAndUpdate(
+      id,
+      {
+        title: title || existingProject.title,
+        slug: finalSlug,
+        tagline: tagline || existingProject.tagline,
+        description: description || existingProject.description,
+        location: location || existingProject.location,
+        address: address || existingProject.address,
+        status: status || existingProject.status,
+        price: price || existingProject.price,
+        area: area || existingProject.area,
+        propertyTypes: propertyTypes || existingProject.propertyTypes,
+        contactNumber: contactNumber || existingProject.contactNumber,
+        imageUrl,
+        logoUrl,
+        videoUrl: videoUrl || existingProject.videoUrl,
+        videoFileUrl,
+        overviewImageUrl,
+        masterPlanImageUrl,
+        floorPlanImageUrl,
+        buildingImageUrl,
+        galleryImages,
+        brochureUrl,
+        priceSheetUrl,
+        amenities: parsedAmenities,
+        highlights: highlights ? JSON.parse(highlights) : existingProject.highlights,
+        nearbyLocations: nearbyLocations ? JSON.parse(nearbyLocations) : existingProject.nearbyLocations,
+        mapEmbedUrl: mapEmbedUrl || existingProject.mapEmbedUrl,
+        isActive: isActive === 'true' || isActive === true,
+        isFeatured: isFeatured === 'true' || isFeatured === true,
+        order: order ? parseInt(order) : existingProject.order,
+      },
+      { new: true, runValidators: true }
+    );
+
+    console.log("✅ Project updated successfully:", updatedProject._id);
+
+    res.status(200).json({ 
+      success: true, 
+      message: "Project updated successfully",
+      data: updatedProject 
+    });
+
   } catch (error) {
-    console.error("Update Error:", error);
-    res.status(500).json({ success: false, message: "Server error", error });
+    console.error("❌ Update Project Error:", error);
+    
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ 
+        success: false, 
+        message: "Validation failed", 
+        errors: messages 
+      });
+    }
+
+    if (error.code === 11000) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Project with this slug already exists" 
+      });
+    }
+
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error while updating project",
+      error: error.message 
+    });
   }
 };
 

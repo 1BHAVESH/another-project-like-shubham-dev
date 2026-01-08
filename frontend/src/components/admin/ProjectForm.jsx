@@ -35,6 +35,8 @@ import playground from "../../assets/playground.png";
 import park from "../../assets/park.png";
 import seniorCitizenArea from "../../assets/seniorCitizenArea.png";
 import BornFire from "../../assets/BornFire.png";
+import { useNavigate, useParams } from "react-router-dom";
+import { useGetDataQuery } from "@/redux/features/shubamdevApi";
 
 // Predefined amenities with imported images
 const PREDEFINED_AMENITIES = [
@@ -76,6 +78,15 @@ const urlToFile = async (url, filename) => {
 };
 
 export default function ProjectForm({ open, onOpenChange, project, length }) {
+  const { companyId } = useParams();
+
+  console.log("loglog", companyId);
+
+  const { data, isLoading: dataLoading } = useGetDataQuery({
+    url: `/company/${companyId}`,
+    tag: "Company",
+  });
+
   const [createData, { isLoading: isCreating }] = useCreateDataMutation();
   const [updateData, { isLoading: isUpdating }] = useUpdateDataMutation();
 
@@ -531,11 +542,21 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
     );
   };
 
+  ///////////////////////////////////////////////
+
+  if (dataLoading) return <h1>Please Wait...</h1>;
+
+  const company = data.company;
+
+  console.log(company);
+
   const onSubmit = async (data) => {
     try {
       const formData = new FormData();
 
       // Basic fields
+      formData.append("companyId", company._id)
+      formData.append("companySlug", company.slug);
       formData.append("title", data.title);
       formData.append("tagline", data.tagline);
       formData.append("description", data.description);
@@ -624,7 +645,16 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
       );
 
       // Images
-      if (selectedImage) formData.append("image", selectedImage);
+      if (selectedImage) {
+        formData.append("image", selectedImage);
+
+        if (project == null) {
+          console.log("project");
+        } else {
+           formData.append("oldImage", project.imageUrl);
+          console.log("mood");
+        }
+      }
       if (selectedLogo) formData.append("logo", selectedLogo);
       if (selectedOverviewImage)
         formData.append("overviewImage", selectedOverviewImage);
@@ -634,9 +664,7 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
         formData.append("floorPlanImage", selectedFloorPlan);
       if (selectedBuildingImage)
         formData.append("buildingImage", selectedBuildingImage);
-      selectedGalleryImages.forEach((img) =>
-        formData.append("galleryImages", img)
-      );
+      selectedGalleryImages.forEach((img) => formData.append("gallery", img));
 
       // Amenity icons for manually added
       selectedAmenityIcons.forEach((icon, index) => {
@@ -662,10 +690,12 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
       if (selectedVideo) formData.append("video", selectedVideo);
 
       deletedGalleryImages.forEach((img) => {
-        formData.append("deletedImages", img);
+         formData.append("oldImages", img);
       });
 
       if (isEditing) {
+        // console.log("selected image", selectedImage);
+
         const response = await updateData({
           url: `/projects/${project._id}`,
           body: formData,
@@ -690,6 +720,8 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
       resetAllSelectedFiles();
       setSelectedPredefinedAmenities([]);
     } catch (error) {
+      console.log(error);
+
       toast.error(error?.data?.message || "Something went wrong");
     }
   };
