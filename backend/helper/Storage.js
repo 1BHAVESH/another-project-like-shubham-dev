@@ -271,13 +271,19 @@ export const uploadCompanyBanner = uploadTo({
   fileSize: 5,
 
   getDir: (req) => {
-    const { companyId } = req.params;
+    const {slug} = req.body;
 
-    if (!companyId) {
-      throw new Error("Company ID missing for banner upload");
+    console.log("###########", req.body);
+    
+
+    console.log("000000000000000", slug);
+    
+
+    if (!slug) {
+      throw new Error("Company slug missing for banner upload");
     }
 
-    return `companies/${companyId}/banners`;
+    return `companies/${slug}/banners`;
   },
 });
 

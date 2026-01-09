@@ -1,6 +1,6 @@
 import express from "express";
 import { addCompanyBanners, createCompany, getCompanies, getCompaniesTitles, getCompany, updateCompany } from "../controller/companyController.js";
-import { deleteOldImage, uploadBanner, uploadCompanyLogo } from "../helper/Storage.js";
+import { deleteOldImage, uploadBanner, uploadCompanyBanner, uploadCompanyLogo } from "../helper/Storage.js";
 
 
 const router = express.Router();
@@ -28,8 +28,8 @@ router.put(
 );
 
 router.post(
-  "/companies/:id/banners",
-  uploadBanner.array("banners", 5), // max 5 banners
+  "/company/:id/banners",
+  uploadCompanyBanner.array("image", 5), // max 5 banners
   addCompanyBanners
 );
 

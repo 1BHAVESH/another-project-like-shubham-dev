@@ -14,21 +14,29 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
- 
   useCreateDataMutation,
   useUpdateDataMutation,
-  
 } from "@/redux/features/adminApi";
 import { toast } from "sonner";
+import { useParams } from "react-router-dom";
+import { useGetDataQuery } from "@/redux/features/shubamdevApi";
 
 export default function BannerForm({ open, onOpenChange, banner }) {
+  const { companyId } = useParams();
+
+  console.log("YYYYYYYYYYY", companyId);
+
+  const { data, isLoading: companyLoading } = useGetDataQuery(
+    { url: `/company/${companyId}` },
+    { skip: !companyId }
+  );
+
   console.log(banner);
-  const [createData, {isLoading: isCreating}] = useCreateDataMutation()
-  
-  
-  const [updateData, { isLoading: isUpdating }] = useUpdateDataMutation()
+  const [createData, { isLoading: isCreating }] = useCreateDataMutation();
+
+  const [updateData, { isLoading: isUpdating }] = useUpdateDataMutation();
   const [imagePreview, setImagePreview] = useState(null);
-  const [oldImage, setOldImage] = useState(null)
+  const [oldImage, setOldImage] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isActive, setIsActive] = useState(true);
 
@@ -60,8 +68,10 @@ export default function BannerForm({ open, onOpenChange, banner }) {
         order: banner.order || 0,
       });
       console.log(banner.imgUrl);
-      setOldImage(banner?.imageUrl)
-      setImagePreview(banner?.imageUrl ? `${BASE_URL}${banner.imageUrl}` : null);
+      setOldImage(banner?.imageUrl);
+      setImagePreview(
+        banner?.imageUrl ? `${BASE_URL}${banner.imageUrl}` : null
+      );
       setIsActive(banner.isActive !== undefined ? banner.isActive : true);
       console.log(imagePreview);
     } else {
@@ -79,41 +89,46 @@ export default function BannerForm({ open, onOpenChange, banner }) {
 
   console.log(imagePreview);
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 
-const handleImageChange = (e) => {
-  const file = e.target.files[0];
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
 
-  if (!file) return;
+    if (!file) return;
 
-  // ❌ Size validation
-  if (file.size > MAX_FILE_SIZE) {
-    toast.error("Image size must be less than 5 MB");
-    e.target.value = ""; // reset file input
-    return;
-  }
+    // ❌ Size validation
+    if (file.size > MAX_FILE_SIZE) {
+      toast.error("Image size must be less than 5 MB");
+      e.target.value = ""; // reset file input
+      return;
+    }
 
-  // ✅ Valid file
-  setSelectedFile(file);
+    // ✅ Valid file
+    setSelectedFile(file);
 
-  const reader = new FileReader();
-  reader.onloadend = () => {
-    setImagePreview(reader.result);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
   };
-  reader.readAsDataURL(file);
-};
-
 
   const removeImage = () => {
     setSelectedFile(null);
     setImagePreview(null);
   };
 
+   if(companyLoading) return <h1>wait...</h1>
+
+  const comapny = data?.company
+console.log("$$$$$$$$$$$", data);
+
+  console.log("########", comapny);
+  
+
   const onSubmit = async (data) => {
     try {
-
       console.log();
-      
 
       const formData = new FormData();
       formData.append("title", data.title);
@@ -123,24 +138,39 @@ const handleImageChange = (e) => {
       formData.append("isActive", isActive);
 
       if (selectedFile) {
+        if(comapny?.slug) formData.append("slug", comapny.slug)
         formData.append("image", selectedFile);
       }
-      if(oldImage){
-        formData.append("oldImage", oldImage)
+      if (oldImage) {
+        formData.append("oldImage", oldImage);
       }
 
-      if (isEditing) {
-         const response =  await updateData({ url:  `/banners/${banner._id}`, body: formData, tag: "banners" }).unwrap();
-
-         console.log("update response",response)
-        toast.success("Banner updated successfully!");
-      } else {
-       const response = await createData({
-          url: "/banners",
+      if (companyId) {
+        
+        const response = await createData({
+          url: `/company/company/${companyId}/banners`,
           body: formData,
-          tag: "banners"
+          tag: "banners",
         }).unwrap();
         toast.success("Banner created successfully!");
+      } else {
+        if (isEditing) {
+          const response = await updateData({
+            url: `/banners/${banner._id}`,
+            body: formData,
+            tag: "banners",
+          }).unwrap();
+
+          console.log("update response", response);
+          toast.success("Banner updated successfully!");
+        } else {
+          const response = await createData({
+            url: "/banners",
+            body: formData,
+            tag: "banners",
+          }).unwrap();
+          toast.success("Banner created successfully!");
+        }
       }
 
       onOpenChange(false);
@@ -149,10 +179,13 @@ const handleImageChange = (e) => {
       setImagePreview(null);
       setIsActive(true);
     } catch (error) {
-      console.log(error)
+      console.log(error);
       toast.error(error?.data?.message || "Something went wrong");
     }
   };
+
+ 
+  
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -210,11 +243,16 @@ const handleImageChange = (e) => {
 
           <div className="flex items-center justify-between p-4 bg-zinc-800 rounded-lg border border-zinc-700">
             <div className="space-y-0.5">
-              <Label htmlFor="active-toggle" className="text-base cursor-pointer">
+              <Label
+                htmlFor="active-toggle"
+                className="text-base cursor-pointer"
+              >
                 Banner Status
               </Label>
               <p className="text-sm text-zinc-400">
-                {isActive ? "Banner is active and visible" : "Banner is inactive and hidden"}
+                {isActive
+                  ? "Banner is active and visible"
+                  : "Banner is inactive and hidden"}
               </p>
             </div>
             <Switch
@@ -245,7 +283,9 @@ const handleImageChange = (e) => {
             ) : (
               <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-zinc-700 rounded-lg cursor-pointer hover:border-[#d4af37] transition-colors">
                 <Upload className="w-8 h-8 text-zinc-400 mb-2" />
-                <span className="text-zinc-400 text-sm">Click to upload image</span>
+                <span className="text-zinc-400 text-sm">
+                  Click to upload image
+                </span>
                 <input
                   type="file"
                   accept="image/*"
