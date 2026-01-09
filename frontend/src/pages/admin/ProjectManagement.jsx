@@ -28,10 +28,13 @@ import {
 import DataTable from "@/components/common/DataTable";
 import useDataTable from "@/hooks/useDataTable";
 import { Switch } from "@/components/ui/switch";
+import { useNavigate, useParams } from "react-router-dom";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export default function ProjectManagement() {
+  const {companyId } = useParams()
+  const naviagte = useNavigate()
   const [patchData] = usePatchDataMutation();
 
   const { data: projectsData, isLoading, error } = useGetDataQuery({
@@ -300,10 +303,17 @@ export default function ProjectManagement() {
 
   return (
     <div className="space-y-4 sm:space-y-6 lg:space-y-8 pt-6 sm:pt-8 lg:pt-12 px-4 sm:px-6 lg:px-0">
+      <Button
+          onClick={() => naviagte(`/admin/${companyId}/banners`)}
+          className="bg-[#d4af37] hover:bg-[#b8962f] text-black cursor-pointer w-full sm:w-auto"
+        >
+           Manage Banner
+        </Button>
+
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold text-white">
-          Project Management
+          Company Projects Management
         </h1>
 
         <Button

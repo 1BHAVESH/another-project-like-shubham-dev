@@ -10,15 +10,16 @@ const companySchema = new mongoose.Schema(
     },
 
     logo: {
-      type: String,   //  image url
+      type: String, // image url
       default: "",
     },
 
-    shortDescription:{
-        type: String,
+    shortDescription: {
+      type: String,
       default: "",
     },
-     slug: {
+
+    slug: {
       type: String,
       required: true,
       unique: true,
@@ -60,7 +61,13 @@ const companySchema = new mongoose.Schema(
       default: "active",
     },
 
-   
+    
+    banners: [
+      {
+        type: String, 
+      },
+    ],
+
     projects: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -70,10 +77,9 @@ const companySchema = new mongoose.Schema(
 
     createdBy: {
       type: String,
-     
     },
   },
   { timestamps: true }
 );
 
-export const Company =  mongoose.model("Company", companySchema);
+export const Company = mongoose.model("Company", companySchema);

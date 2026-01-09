@@ -122,6 +122,7 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
   const [videoPreview, setVideoPreview] = useState(null);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [videoFileName, setVideoFileName] = useState(null);
+  const [videoToDelete, setVideoToDelete] = useState (null)
 
   // NEW: Predefined amenities selector states
   const [selectedPredefinedAmenities, setSelectedPredefinedAmenities] =
@@ -130,6 +131,7 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
   const [customAmenityName, setCustomAmenityName] = useState("");
   const [customAmenityIcon, setCustomAmenityIcon] = useState(null);
   const [customAmenityPreview, setCustomAmenityPreview] = useState(null);
+  const [deletedAmenityIcons, setDeletedAmenityIcons] = useState([]);
 
   const isEditing = !!project;
   const isLoading = isCreating || isUpdating;
@@ -231,8 +233,8 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
       setBrochureName(project.brochureUrl ? "Current Brochure" : null);
       setPriceSheetName(project.priceSheetUrl ? "Current Price Sheet" : null);
 
-      if (project.videoFileUrl) {
-        setVideoPreview(getImageUrl(project.videoFileUrl));
+      if (project.videoUrl) {
+        setVideoPreview(getImageUrl(project.videoUrl));
         setVideoFileName("Current Video");
       }
     } else {
@@ -483,6 +485,12 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
   };
 
   const handleRemoveAmenity = (index) => {
+    const iconPath = project?.amenities?.[index]?.icon;
+
+    if (iconPath) {
+      setDeletedAmenityIcons((prev) => [...prev, iconPath]);
+    }
+
     removeAmenity(index);
     setAmenityIconPreviews((prev) => prev.filter((_, i) => i !== index));
     setSelectedAmenityIcons((prev) => prev.filter((_, i) => i !== index));
@@ -542,6 +550,12 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
 
   // NEW: Remove predefined amenity
   const removePredefinedAmenity = (amenityName) => {
+    const found = project?.amenities?.find((a) => a.name === amenityName);
+
+    if (found?.icon) {
+      setDeletedAmenityIcons((prev) => [...prev, found.icon]);
+    }
+
     setSelectedPredefinedAmenities((prev) =>
       prev.filter((a) => a.name !== amenityName)
     );
@@ -697,18 +711,27 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
 
       // Video
       if (selectedVideo) formData.append("video", selectedVideo);
+      if (videoToDelete) formData.append("videoToDelete", videoToDelete)
 
       deletedGalleryImages.forEach((img) => {
         formData.append("oldImages", img);
       });
 
+     if(deletedAmenityIcons.length > 0){
+       deletedAmenityIcons.forEach((icon) => {
+        formData.append("deletedAmenityIcons", icon);
+      });
+     }
+
       if (isEditing) {
         // console.log("selected image", selectedImage);
 
-        console.log("deletedGalleryImages",deletedGalleryImages);
+        // console.log("deletedGalleryImages", deletedGalleryImages);
+
+        console.log(deletedAmenityIcons);
         
 
-        const response = await jjkkupdateData({
+        const response = await updateData({
           url: `/projects/${project._id}`,
           body: formData,
           tag: "Project",
@@ -1120,7 +1143,10 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
                     </video>
                     <button
                       type="button"
-                      onClick={removeVideo}
+                      onClick={() => {
+                        removeVideo(),
+                        setVideoToDelete(project.videoUrl)
+                      }}
                       className="absolute cursor-pointer top-2 right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
                     >
                       <X className="w-4 h-4" />
@@ -1175,7 +1201,7 @@ export default function ProjectForm({ open, onOpenChange, project, length }) {
                 {galleryPreviews.map((preview, index) => (
                   <div key={index} className="relative">
                     <img
-                      src={preview.fullUrl}
+                      src={preview?.fullUrl ? preview?.fullUrl : preview}
                       alt={`Gallery ${index}`}
                       className="w-full h-20 object-cover rounded-lg"
                     />

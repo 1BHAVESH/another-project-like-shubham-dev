@@ -90,15 +90,29 @@ export const deleteOldFiles = () => (req, res, next) => {
     const { deletedFiles, oldImage, oldImages } = req.body;
     let filesToDelete = [];
 
+      const deletedAmenityIcons = req.body?.deletedAmenityIcons
+      ? Array.isArray(req.body.deletedAmenityIcons)
+        ? req.body.deletedAmenityIcons
+        : [req.body.deletedAmenityIcons]
+      : [];
+
     console.log("zzzzzzzzzzzz", req.body);
 
-    // throw Error("error")
+    console.log("oldImages === ", oldImages);
+    
+
+    //  throw Error("error")
 
     if (oldImage) filesToDelete.push(oldImage);
     if (oldImages) {
       const images = Array.isArray(oldImages) ? oldImages : [oldImages];
       filesToDelete.push(...images);
     }
+    if(deletedAmenityIcons){
+       const images = Array.isArray(deletedAmenityIcons) ? deletedAmenityIcons : [deletedAmenityIcons];
+      filesToDelete.push(...images);
+    }
+    
     if (deletedFiles) {
       const files = Array.isArray(deletedFiles) ? deletedFiles : [deletedFiles];
       filesToDelete.push(...files);
@@ -111,10 +125,35 @@ export const deleteOldFiles = () => (req, res, next) => {
 
     next();
   } catch (err) {
-    console.error("❌ Delete Middleware Error:", err);
+    console.error(" Delete Middleware Error:", err);
     next();
   }
 };
+
+export const deleteVideoFolder = (videoFileUrl) => {
+  if (!videoFileUrl) return;
+
+  try {
+    // "/uploads/companies/.../videos/video-123.mp4"
+    const cleanPath = videoFileUrl.startsWith("/")
+      ? videoFileUrl.substring(1)
+      : videoFileUrl;
+
+    const fullFilePath = path.join(process.cwd(), cleanPath);
+
+    // 👇 extract /videos folder
+    const videoFolderPath = path.dirname(fullFilePath);
+
+    if (fs.existsSync(videoFolderPath)) {
+      fs.rmSync(videoFolderPath, { recursive: true, force: true });
+      console.log("🗑️ Video folder deleted:", videoFolderPath);
+    }
+  } catch (err) {
+    console.error("❌ Video folder delete error:", err.message);
+  }
+};
+
+
 
 /**
  * Delete entire folder recursively
@@ -225,6 +264,21 @@ export const uploadBanner = uploadTo({
   dir: "banners",
   isImage: true,
   fileSize: 5,
+});
+
+export const uploadCompanyBanner = uploadTo({
+  isImage: true,
+  fileSize: 5,
+
+  getDir: (req) => {
+    const { companyId } = req.params;
+
+    if (!companyId) {
+      throw new Error("Company ID missing for banner upload");
+    }
+
+    return `companies/${companyId}/banners`;
+  },
 });
 
 // ========== COMPANY LOGO UPLOAD ==========

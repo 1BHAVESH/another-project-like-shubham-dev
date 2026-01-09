@@ -2,7 +2,7 @@ import Project from "../models/Project.js";
 import fs from "fs";
 import path from "path";
 import { Company } from "../models/Compnies.js";
-import { deleteFiles } from "../helper/Storage.js";
+import { deleteFiles, deleteVideoFolder } from "../helper/Storage.js";
 
 export const getAllProjects = async (req, res) => {
   try {
@@ -75,30 +75,33 @@ export const createProject = async (req, res) => {
       amenityIconIndexes,
       companySlug,
       projectSlug,
-      companyId
+      companyId,
     } = req.body;
 
     // Validation
     if (!title) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Project title is required" 
+      return res.status(400).json({
+        success: false,
+        message: "Project title is required",
       });
     }
 
     if (!req.files || !req.files.image) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Main project image is required" 
+      return res.status(400).json({
+        success: false,
+        message: "Main project image is required",
       });
     }
 
     // Generate slug if not provided
-    const finalSlug = slug || projectSlug || title
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-");
+    const finalSlug =
+      slug ||
+      projectSlug ||
+      title
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-");
 
     console.log("📝 Creating project:", title);
     console.log("🏢 Company Slug:", companySlug);
@@ -108,40 +111,40 @@ export const createProject = async (req, res) => {
     const getRelativePath = (file) => {
       if (!file) return null;
       // Extract path after 'uploads/'
-      const fullPath = file.path.replace(/\\/g, '/');
-      const uploadsIndex = fullPath.indexOf('uploads/');
-      return uploadsIndex !== -1 ? `/${fullPath.substring(uploadsIndex)}` : `/${file.path}`;
+      const fullPath = file.path.replace(/\\/g, "/");
+      const uploadsIndex = fullPath.indexOf("uploads/");
+      return uploadsIndex !== -1
+        ? `/${fullPath.substring(uploadsIndex)}`
+        : `/${file.path}`;
     };
 
     // ========== PROCESS FILE UPLOADS ==========
-    
+
     // Main Image (required)
     const imageUrl = getRelativePath(req.files.image[0]);
 
     // Optional Images
-    const logoUrl = req.files.logo 
-      ? getRelativePath(req.files.logo[0]) 
+    const logoUrl = req.files.logo ? getRelativePath(req.files.logo[0]) : null;
+
+    const overviewImageUrl = req.files.overviewImage
+      ? getRelativePath(req.files.overviewImage[0])
       : null;
 
-    const overviewImageUrl = req.files.overviewImage 
-      ? getRelativePath(req.files.overviewImage[0]) 
+    const masterPlanImageUrl = req.files.masterPlanImage
+      ? getRelativePath(req.files.masterPlanImage[0])
       : null;
 
-    const masterPlanImageUrl = req.files.masterPlanImage 
-      ? getRelativePath(req.files.masterPlanImage[0]) 
+    const floorPlanImageUrl = req.files.floorPlanImage
+      ? getRelativePath(req.files.floorPlanImage[0])
       : null;
 
-    const floorPlanImageUrl = req.files.floorPlanImage 
-      ? getRelativePath(req.files.floorPlanImage[0]) 
-      : null;
-
-    const buildingImageUrl = req.files.buildingImage 
-      ? getRelativePath(req.files.buildingImage[0]) 
+    const buildingImageUrl = req.files.buildingImage
+      ? getRelativePath(req.files.buildingImage[0])
       : null;
 
     // Gallery Images
     const galleryImages = req.files.gallery
-      ? req.files.gallery.map(file => getRelativePath(file))
+      ? req.files.gallery.map((file) => getRelativePath(file))
       : [];
 
     // Documents
@@ -158,14 +161,14 @@ export const createProject = async (req, res) => {
       ? getRelativePath(req.files.video[0])
       : null;
 
-    console.log("📁 Files processed:");
+    console.log(" Files processed:");
     console.log("  - Main Image:", imageUrl);
     console.log("  - Gallery:", galleryImages.length, "images");
     console.log("  - Video File:", videoFileUrl || "None");
     console.log("  - Brochure:", brochureUrl || "None");
 
     // ========== PROCESS AMENITIES WITH ICONS ==========
-    
+
     let parsedAmenities = amenities ? JSON.parse(amenities) : [];
 
     if (req.files?.amenityIcons && amenityIconIndexes) {
@@ -174,7 +177,7 @@ export const createProject = async (req, res) => {
         ? amenityIconIndexes
         : [amenityIconIndexes];
 
-      console.log("🎨 Processing amenity icons:");
+      console.log(" Processing amenity icons:");
       console.log("  - Total icons:", iconFiles.length);
       console.log("  - Indexes:", indexes);
 
@@ -184,21 +187,27 @@ export const createProject = async (req, res) => {
         if (iconFiles[i] && parsedAmenities[amenityIndex]) {
           const iconPath = getRelativePath(iconFiles[i]);
           parsedAmenities[amenityIndex].icon = iconPath;
-          console.log(`  ✓ Amenity ${amenityIndex} (${parsedAmenities[amenityIndex].name}):`, iconPath);
+          console.log(
+            `  ✓ Amenity ${amenityIndex} (${parsedAmenities[amenityIndex].name}):`,
+            iconPath
+          );
         }
       });
     }
 
     // Validate amenities (ensure all have icons)
-    const amenitiesWithoutIcons = parsedAmenities.filter(a => !a.icon);
+    const amenitiesWithoutIcons = parsedAmenities.filter((a) => !a.icon);
     if (amenitiesWithoutIcons.length > 0) {
-      console.warn("⚠️ Some amenities missing icons:", amenitiesWithoutIcons.map(a => a.name));
+      console.warn(
+        "⚠️ Some amenities missing icons:",
+        amenitiesWithoutIcons.map((a) => a.name)
+      );
       // Remove amenities without icons
-      parsedAmenities = parsedAmenities.filter(a => a.icon);
+      parsedAmenities = parsedAmenities.filter((a) => a.icon);
     }
 
     // ========== CREATE PROJECT IN DATABASE ==========
-    
+
     const project = await Project.create({
       title,
       slug: finalSlug,
@@ -213,8 +222,8 @@ export const createProject = async (req, res) => {
       contactNumber,
       imageUrl,
       logoUrl,
-      videoUrl: videoUrl || null,        // YouTube/external URL
-      videoFileUrl,                       // Uploaded video file
+      videoUrl: videoUrl || null, // YouTube/external URL
+      videoFileUrl, // Uploaded video file
       overviewImageUrl,
       masterPlanImageUrl,
       floorPlanImageUrl,
@@ -226,50 +235,49 @@ export const createProject = async (req, res) => {
       highlights: highlights ? JSON.parse(highlights) : [],
       nearbyLocations: nearbyLocations ? JSON.parse(nearbyLocations) : [],
       mapEmbedUrl,
-      isActive: isActive === 'true' || isActive === true,
-      isFeatured: isFeatured === 'true' || isFeatured === true,
+      isActive: isActive === "true" || isActive === true,
+      isFeatured: isFeatured === "true" || isFeatured === true,
       order: parseInt(order) || 0,
-      company: companyId
+      company: companyId,
     });
 
-    const company = await Company.findById(companyId)
+    const company = await Company.findById(companyId);
 
-    company.projects.push(project._id)
+    company.projects.push(project._id);
 
-    await company.save()
+    await company.save();
 
     console.log("✅ Project created successfully:", project._id);
 
-    res.status(201).json({ 
-      success: true, 
+    res.status(201).json({
+      success: true,
       message: "Project created successfully",
-      data: project 
+      data: project,
     });
-
   } catch (error) {
     console.error("❌ Create Project Error:", error);
-    
+
     // Provide more specific error messages
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({ 
-        success: false, 
-        message: "Validation failed", 
-        errors: messages 
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: messages,
       });
     }
 
     if (error.code === 11000) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Project with this slug already exists" 
+      return res.status(400).json({
+        success: false,
+        message: "Project with this slug already exists",
       });
     }
 
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: "Server error while creating project",
-      error: error.message 
+      error: error.message,
     });
   }
 };
@@ -286,6 +294,7 @@ const deleteOldFile = (fileUrl) => {
 export const updateProject = async (req, res) => {
   try {
     const { id } = req.params;
+
     const {
       title,
       slug,
@@ -307,48 +316,71 @@ export const updateProject = async (req, res) => {
       isFeatured,
       order,
       amenityIconIndexes,
-      companySlug,
       projectSlug,
-      deletedFiles, // ✅ Array of old files to delete
+      deletedFiles,
     } = req.body;
+    console.log("===============================", req.files);
 
-    // Find existing project
+    // -----------------------------
+    // 1️⃣ FIND PROJECT
+    // -----------------------------
     const existingProject = await Project.findById(id);
     if (!existingProject) {
-      return res.status(404).json({ 
-        success: false, 
-        message: "Project not found" 
+      return res.status(404).json({
+        success: false,
+        message: "Project not found",
       });
     }
 
-    console.log("📝 Updating project:", title);
-    console.log("🗑️ Files to delete:", deletedFiles);
+    // -----------------------------
+    // 2️⃣ FORCE oldImages AS ARRAY
+    // -----------------------------
+    const oldImages = req.body?.oldImages
+      ? Array.isArray(req.body.oldImages)
+        ? req.body.oldImages
+        : [req.body.oldImages]
+      : [];
 
-    // ========== DELETE OLD FILES FIRST ==========
+    // -----------------------------
+    // 3️⃣ DELETE FILES FROM FOLDER
+    // -----------------------------
     if (deletedFiles) {
-      const filesToDelete = Array.isArray(deletedFiles) ? deletedFiles : [deletedFiles];
-      console.log("🗑️ Deleting files:", filesToDelete);
+      const filesToDelete = Array.isArray(deletedFiles)
+        ? deletedFiles
+        : [deletedFiles];
       deleteFiles(filesToDelete);
     }
 
-    // ========== HELPER FUNCTION TO GET RELATIVE PATH ==========
-    const getRelativePath = (file) => {
-      if (!file) return null;
-      const fullPath = file.path.replace(/\\/g, '/');
-      const uploadsIndex = fullPath.indexOf('uploads/');
-      return uploadsIndex !== -1 ? `/${fullPath.substring(uploadsIndex)}` : `/${file.path}`;
+    // -----------------------------
+    // 4️⃣ SAFE PATH HANDLER
+    // -----------------------------
+    const getRelativePath = (fileOrPath) => {
+      if (!fileOrPath) return null;
+
+      // CASE 1: already string path
+      if (typeof fileOrPath === "string") {
+        return fileOrPath.startsWith("/") ? fileOrPath : `/${fileOrPath}`;
+      }
+
+      // CASE 2: multer file object
+      if (fileOrPath.path) {
+        const fullPath = fileOrPath.path.replace(/\\/g, "/");
+        const uploadsIndex = fullPath.indexOf("uploads/");
+        return uploadsIndex !== -1
+          ? `/${fullPath.substring(uploadsIndex)}`
+          : `/${fullPath}`;
+      }
+
+      return null;
     };
 
-    // ========== PROCESS FILE UPLOADS ==========
-    
-    // Main Image - if new file uploaded, use it; otherwise keep existing
-    let imageUrl = existingProject.imageUrl;
-    if (req.files?.image) {
-      imageUrl = getRelativePath(req.files.image[0]);
-      console.log("🖼️ New main image:", imageUrl);
-    }
+    // -----------------------------
+    // 5️⃣ PROCESS MAIN IMAGES
+    // -----------------------------
+    const imageUrl = req.files?.image
+      ? getRelativePath(req.files.image[0])
+      : existingProject.imageUrl;
 
-    // Rest of your file processing...
     const logoUrl = req.files?.logo
       ? getRelativePath(req.files.logo[0])
       : existingProject.logoUrl;
@@ -369,15 +401,32 @@ export const updateProject = async (req, res) => {
       ? getRelativePath(req.files.buildingImage[0])
       : existingProject.buildingImageUrl;
 
-    // Gallery Images - merge existing with new
+    // -----------------------------
+    // 6️⃣ GALLERY LOGIC (DELETE + ADD)
+    // -----------------------------
     let galleryImages = [...existingProject.galleryImages];
-    
-    if (req.files?.gallery) {
-      const newGalleryImages = req.files.gallery.map(file => getRelativePath(file));
+
+    // DELETE FROM DB
+    if (oldImages.length > 0) {
+      const deleteImages = oldImages.map((img) => getRelativePath(img));
+
+      galleryImages = galleryImages.filter(
+        (img) => !deleteImages.includes(img)
+      );
+    }
+
+    // ADD NEW FILES
+    if (req.files?.gallery?.length > 0) {
+      const newGalleryImages = req.files.gallery
+        .map((file) => getRelativePath(file))
+        .filter(Boolean);
+
       galleryImages = [...galleryImages, ...newGalleryImages];
     }
 
-    // Documents
+    // -----------------------------
+    // 7️⃣ DOCUMENTS & VIDEO
+    // -----------------------------
     const brochureUrl = req.files?.brochure
       ? getRelativePath(req.files.brochure[0])
       : existingProject.brochureUrl;
@@ -386,35 +435,50 @@ export const updateProject = async (req, res) => {
       ? getRelativePath(req.files.priceSheet[0])
       : existingProject.priceSheetUrl;
 
-    // Video File
-    const videoFileUrl = req.files?.video
-      ? getRelativePath(req.files.video[0])
-      : existingProject.videoFileUrl;
+    let videoFileUrl = existingProject.videoFileUrl;
 
-    // ========== PROCESS AMENITIES WITH ICONS ==========
-    
-    let parsedAmenities = amenities ? JSON.parse(amenities) : existingProject.amenities;
+    // ✅ ONLY when user uploads NEW video
+    if (req.files?.video?.length > 0) {
+      // 1️⃣ delete OLD video FILE (NOT folder yet)
+      if (existingProject.videoUrl) {
+        deleteFiles(existingProject.videoUrl);
+      }
+
+      // 2️⃣ OPTIONAL: delete folder IF empty
+      // (safe cleanup, not mandatory)
+      // cleanupEmptyParentFolder(existingProject.videoUrl);
+
+      // 3️⃣ set NEW video path
+      videoFileUrl = getRelativePath(req.files.video[0]);
+    }
+
+    // -----------------------------
+    // 8️⃣ AMENITIES WITH ICONS
+    // -----------------------------
+    let parsedAmenities = [];
+
+    if (amenities) {
+      parsedAmenities = JSON.parse(amenities);
+    }
 
     if (req.files?.amenityIcons && amenityIconIndexes) {
-      const iconFiles = req.files.amenityIcons;
       const indexes = Array.isArray(amenityIconIndexes)
         ? amenityIconIndexes
         : [amenityIconIndexes];
 
-      indexes.forEach((index, i) => {
-        const amenityIndex = parseInt(index);
-        if (iconFiles[i] && parsedAmenities[amenityIndex]) {
-          const iconPath = getRelativePath(iconFiles[i]);
-          parsedAmenities[amenityIndex].icon = iconPath;
+      indexes.forEach((idx, i) => {
+        const index = parseInt(idx);
+        if (parsedAmenities[index] && req.files.amenityIcons[i]) {
+          parsedAmenities[index].icon = getRelativePath(
+            req.files.amenityIcons[i]
+          );
         }
       });
     }
 
-    // Remove amenities without icons
-    parsedAmenities = parsedAmenities.filter(a => a.icon);
-
-    // ========== UPDATE PROJECT IN DATABASE ==========
-    
+    // -----------------------------
+    // 9️⃣ UPDATE DB
+    // -----------------------------
     const finalSlug = slug || projectSlug || existingProject.slug;
 
     const updatedProject = await Project.findByIdAndUpdate(
@@ -433,8 +497,7 @@ export const updateProject = async (req, res) => {
         contactNumber: contactNumber || existingProject.contactNumber,
         imageUrl,
         logoUrl,
-        videoUrl: videoUrl || existingProject.videoUrl,
-        videoFileUrl,
+        videoUrl: videoFileUrl || existingProject.videoUrl,
         overviewImageUrl,
         masterPlanImageUrl,
         floorPlanImageUrl,
@@ -443,47 +506,35 @@ export const updateProject = async (req, res) => {
         brochureUrl,
         priceSheetUrl,
         amenities: parsedAmenities,
-        highlights: highlights ? JSON.parse(highlights) : existingProject.highlights,
-        nearbyLocations: nearbyLocations ? JSON.parse(nearbyLocations) : existingProject.nearbyLocations,
+        highlights: highlights
+          ? JSON.parse(highlights)
+          : existingProject.highlights,
+        nearbyLocations: nearbyLocations
+          ? JSON.parse(nearbyLocations)
+          : existingProject.nearbyLocations,
         mapEmbedUrl: mapEmbedUrl || existingProject.mapEmbedUrl,
-        isActive: isActive === 'true' || isActive === true,
-        isFeatured: isFeatured === 'true' || isFeatured === true,
+        isActive: isActive === "true" || isActive === true,
+        isFeatured: isFeatured === "true" || isFeatured === true,
         order: order ? parseInt(order) : existingProject.order,
       },
       { new: true, runValidators: true }
     );
 
-    console.log("✅ Project updated successfully:", updatedProject._id);
-
-    res.status(200).json({ 
-      success: true, 
+    // -----------------------------
+    // 🔚 RESPONSE
+    // -----------------------------
+    res.status(200).json({
+      success: true,
       message: "Project updated successfully",
-      data: updatedProject 
+      data: updatedProject,
     });
-
   } catch (error) {
     console.error("❌ Update Project Error:", error);
-    
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({ 
-        success: false, 
-        message: "Validation failed", 
-        errors: messages 
-      });
-    }
 
-    if (error.code === 11000) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "Project with this slug already exists" 
-      });
-    }
-
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: "Server error while updating project",
-      error: error.message 
+      error: error.message,
     });
   }
 };
@@ -506,32 +557,32 @@ export const deleteProject = async (req, res) => {
       deleteOldFile(project.videoUrl);
     }
 
-    if(project.imageUrl){
+    if (project.imageUrl) {
       deleteOldFile(project.imageUrl);
     }
 
-    if(project.overviewImageUrl){
+    if (project.overviewImageUrl) {
       deleteOldFile(project.overviewImageUrl);
     }
 
-    if(project.masterPlanImageUrl){
+    if (project.masterPlanImageUrl) {
       deleteOldFile(project.masterPlanImageUrl);
     }
 
-    if(project.floorPlanImageUrl){
+    if (project.floorPlanImageUrl) {
       deleteOldFile(project.floorPlanImageUrl);
     }
 
-    if(project.buildingImageUrl){
+    if (project.buildingImageUrl) {
       deleteOldFile(project.buildingImageUrl);
     }
 
-    if(project.brochureUrl){
-      deleteOldFile(project.brochureUrl)
+    if (project.brochureUrl) {
+      deleteOldFile(project.brochureUrl);
     }
 
-    if(project.priceSheetUrl){
-      deleteOldFile(project.priceSheetUrl)
+    if (project.priceSheetUrl) {
+      deleteOldFile(project.priceSheetUrl);
     }
 
     if (
@@ -545,10 +596,7 @@ export const deleteProject = async (req, res) => {
       });
     }
 
-    if (
-      Array.isArray(project.amenities) &&
-      project.amenities.length > 0
-    ) {
+    if (Array.isArray(project.amenities) && project.amenities.length > 0) {
       console.log("Total images:", project.amenities.length);
 
       project.amenities.forEach((amenite) => {
@@ -556,9 +604,9 @@ export const deleteProject = async (req, res) => {
       });
     }
 
-    console.log(project)
+    console.log(project);
 
-     await Project.findByIdAndDelete(id);
+    await Project.findByIdAndDelete(id);
     res
       .status(200)
       .json({ success: true, message: "Project deleted successfully" });

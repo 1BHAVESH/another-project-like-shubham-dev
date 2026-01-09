@@ -15,7 +15,10 @@ export const getCompany = async (req, res) => {
     const { id } = req.params;
 
     // ---------- FIND COMPANY ----------
-    const company = await Company.findById(id);
+    const company = await Company.findById(id).populate({
+       path: "projects",
+       select: "_id title",
+    })
 
     if (!company) {
       return res.status(404).json({
@@ -62,6 +65,10 @@ export const getCompanies = async (req, res) => {
 
     // ---------- DATA ----------
     const companies = await Company.find(filter)
+      .populate({
+        path: "projects",
+        select: "_id title", // project id + title
+      })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit);
@@ -218,11 +225,9 @@ export const updateCompany = async (req, res) => {
     company.phone = req.body.phone ?? company.phone;
     company.shortDescription =
       req.body.shortDescription ?? company.shortDescription;
-    company.description =
-      req.body.description ?? company.description;
+    company.description = req.body.description ?? company.description;
     company.website = req.body.website ?? company.website;
-    company.establishedOn =
-      req.body.establishedOn ?? company.establishedOn;
+    company.establishedOn = req.body.establishedOn ?? company.establishedOn;
     company.status = req.body.status ?? company.status;
 
     company.address.street = req.body.street ?? company.address.street;
@@ -242,17 +247,13 @@ export const updateCompany = async (req, res) => {
 
     console.log("new slug: ", newSlug);
     console.log("old slug: ", oldSlug);
-    
-    
-    
+
     // if (newSlug !== oldSlug) {
     //   const oldPath = path.join(process.cwd(), `uploads/companies/${oldSlug}`);
     //   const newPath = path.join(process.cwd(), `uploads/companies/${newSlug}`);
-    
-    
+
     //   console.log("old PATH", oldPath);
     //   console.log("new PATH", newPath);
-
 
     //   // if (fs.existsSync(oldPath)) {
     //   //   fs.renameSync(oldPath, newPath);
@@ -281,9 +282,113 @@ export const updateCompany = async (req, res) => {
       message: "Company updated successfully",
       company,
     });
-
   } catch (err) {
     console.log(err);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+export const getCompaniesTitles = async (req, res) => {
+  try {
+    // 👉 Sirf title (ya name) field fetch karo
+    const companies = await Company.find().select("name");
+
+    // Agar koi company na mile
+    if (!companies || companies.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No companies found",
+      });
+    }
+
+    // 👉 Sirf titles ka array banana ho to
+
+    res.status(200).json({
+      success: true,
+      message: "Company titles fetched successfully",
+      data: companies,
+    });
+  } catch (error) {
+    console.error("❌ Get Companies Titles Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+export const getCompanyBanners = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const company = await Company.findById(id).select("name banners");
+
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: "Company not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      company: {
+        _id: company._id,
+        name: company.name,
+      },
+      banners: company.banners || [],
+      count: company.banners?.length || 0,
+    });
+  } catch (error) {
+    console.error("❌ Get Company Banners Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+
+export const addCompanyBanners = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const company = await Company.findById(id);
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: "Company not found",
+      });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No banner files uploaded",
+      });
+    }
+
+    //  multer files → relative paths
+    const bannerPaths = req.files.map((file) => {
+      const normalized = file.path.replace(/\\/g, "/");
+      return "/uploads" + normalized.split("uploads")[1];
+    });
+
+    //  ADD ONLY (no delete here)
+    company.banners.push(...bannerPaths);
+    await company.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Company banners added successfully",
+      banners: company.banners,
+    });
+  } catch (error) {
+    console.error("❌ Add Company Banner Error:", error);
     return res.status(500).json({
       success: false,
       message: "Server error",

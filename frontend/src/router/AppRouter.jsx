@@ -41,6 +41,7 @@ import Media1 from "@/pages/Media1";
 import AdminMediaPost from "@/pages/admin/adminMediaPost";
 import CompanyPage from "@/pages/CompanyPage";
 import AdminCompany from "@/pages/admin/AdminCompany";
+import CompanyInfoPage from "@/pages/CompanyInfoPage";
 
 export default function AppRoutes() {
   return (
@@ -50,6 +51,7 @@ export default function AppRoutes() {
         {/* COMMON LAYOUT WITH NAVBAR */}
         <Route element={<Layout />}>
           <Route path="/" element={<RealEstateLanding />} />
+          <Route path="/company/:id" element={<CompanyInfoPage />}/>
           <Route path="/about" element={<About />} />
           <Route path="/projects" element={<Projects />} />
           <Route path="/company" element={<CompanyPage />} />
@@ -81,6 +83,7 @@ export default function AppRoutes() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="banners" element={<BannerManagement />} />
+          <Route path=":companyId/banners" element={<BannerManagement />} />
           <Route path=":companyId/projects" element={<ProjectManagement />} />
           <Route path="company" element={<AdminCompany />} />
           <Route path="home-page" element={<HomePage />} />

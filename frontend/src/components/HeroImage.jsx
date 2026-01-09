@@ -3,7 +3,6 @@ import "swiper/css";
 import "swiper/css/pagination";
 import { Pagination, Autoplay } from "swiper/modules";
 import {
-  
   useGetDataQuery,
   useGetGeneralSettingQueryQuery,
 } from "@/redux/features/adminApi";
@@ -44,8 +43,12 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 export default function HeroImage({ visible, setVisible }) {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const {data: GetData, isLoading: getDataLoading} = useGetDataQuery({
-    url: "/banners"
+  const { data: GetData, isLoading: getDataLoading } = useGetDataQuery({
+    url: "/banners",
+  });
+  const {data: compniesData, isLoading: compnyNmaeLoading} = useGetDataQuery({
+      url: "/company/get-title",
+    
   })
   const {
     data: genralData,
@@ -55,7 +58,7 @@ export default function HeroImage({ visible, setVisible }) {
 
   // const banners = bannersData?.data || [];
 
-  if (getDataLoading) {
+  if (getDataLoading || compnyNmaeLoading) {
     return (
       <section className="w-full h-[270px] lg:h-[501px] bg-gray-200 animate-pulse" />
     );
@@ -63,13 +66,18 @@ export default function HeroImage({ visible, setVisible }) {
 
   console.log(genralData);
 
-
-  console.log("getData", GetData)
+  console.log("getData", GetData);
 
   const banners = GetData?.data || [];
 
   if (banners.length === 0) return null;
 
+  console.log("company name = ", compniesData);
+
+  const companyName = compniesData?.data
+
+  console.log("//////////", companyName);
+  
 
   return (
     <section className="w-full  relative">
@@ -111,25 +119,63 @@ export default function HeroImage({ visible, setVisible }) {
               </NavigationMenu>
 
               {/* CONTACT - Simple link */}
-              <Link
-                to="/company"
-                className="text-white text-sm lg:text-base font-medium hover:opacity-80 transition-opacity"
-              >
-                Compnies
-              </Link>
+              <div className="relative group inline-block">
+                {/* Trigger */}
+                <button className="flex items-center gap-1 cursor-pointer text-white text-sm lg:text-base font-medium hover:opacity-80 transition-opacity">
+                  <span>Companies</span>
+
+                  <svg
+                    className="w-3 h-4 transition-transform duration-200 group-hover:rotate-180"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="m19 9-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+
+                {/* Dropdown */}
+                {
+                  companyName.length > 0 && (
+                    <div className="absolute left-0 top-full mt-2 w-44 hidden group-hover:block bg-white border rounded-lg shadow-lg z-50">
+                 { companyName.map((company) => (
+                  <ul className="p-1 text-sm text-black">
+                    <li>
+                      <Link
+                        to={`/company/${company._id}`}
+                        className="block px-3 py-1 rounded border-b-2 "
+                      >
+                        {company.name}
+                      </Link>
+                    </li>
+                    
+                    
+                  </ul>
+                 ))}
+                </div>
+                  )
+                }
+              </div>
+
               <Link
                 to="/contact"
-                className="text-white text-sm lg:text-base font-medium hover:opacity-80 transition-opacity"
+                className="group inline-flex items-center gap-1 text-white text-sm lg:text-base font-medium transition-all duration-200 hover:text-zinc-300"
               >
-                Contact
+                <span>Contact</span>
               </Link>
+
               <Link
                 to="/projects"
                 className="text-white text-sm lg:text-base font-medium hover:opacity-80 transition-opacity"
               >
                 Projects
               </Link>
-              
             </div>
 
             {/* CENTER - LOGO   src={`${API_URL}/${genralData?.data?.logo}`} */}
@@ -149,11 +195,11 @@ export default function HeroImage({ visible, setVisible }) {
               <ul className="hidden lg:flex gap-6 lg:gap-8">
                 <li>
                   <Link
-                to="/media"
-                className="text-white text-sm lg:text-base font-medium hover:opacity-80 transition-opacity"
-              >
-                Media
-              </Link>
+                    to="/media"
+                    className="text-white text-sm lg:text-base font-medium hover:opacity-80 transition-opacity"
+                  >
+                    Media
+                  </Link>
                 </li>
                 <li>
                   <Link
@@ -321,40 +367,35 @@ export default function HeroImage({ visible, setVisible }) {
       </nav>
 
       {/* Banner Swiper With Dark Overlay */}
-    <section className="w-full relative">
+      <section className="w-full relative">
+        {/* NAVBAR */}
+        <nav className="absolute top-0 left-0 right-0 z-50 bg-transparent">
+          {/* navbar content */}
+        </nav>
 
-  {/* NAVBAR */}
-  <nav className="absolute top-0 left-0 right-0 z-50 bg-transparent">
-    {/* navbar content */}
-  </nav>
+        {/* HERO */}
+        <div className="relative w-full h-[270px] sm:h-[350px] md:h-[400px] lg:h-[700px] overflow-hidden">
+          <Swiper
+            modules={[Pagination, Autoplay]}
+            pagination={{ clickable: true }}
+            autoplay={{ delay: 2000, disableOnInteraction: false }}
+            loop={banners.length > 1}
+            className="w-full h-full relative z-0"
+          >
+            {banners.map((banner) => (
+              <SwiperSlide key={banner._id}>
+                <img
+                  src={`${API_URL}${banner.imageUrl}`}
+                  className="w-full h-full object-cover"
+                />
+              </SwiperSlide>
+            ))}
+          </Swiper>
 
-  {/* HERO */}
-  <div className="relative w-full h-[270px] sm:h-[350px] md:h-[400px] lg:h-[700px] overflow-hidden">
-
-    <Swiper
-      modules={[Pagination, Autoplay]}
-      pagination={{ clickable: true }}
-      autoplay={{ delay: 2000, disableOnInteraction: false }}
-      loop={banners.length > 1}
-      className="w-full h-full relative z-0"
-    >
-      {banners.map((banner) => (
-        <SwiperSlide key={banner._id}>
-          <img
-            src={`${API_URL}${banner.imageUrl}`}
-            className="w-full h-full object-cover"
-          />
-        </SwiperSlide>
-      ))}
-    </Swiper>
-
-    {/* FIGMA EXACT GRADIENT */}
-    <div className="absolute h-[35%] inset-0 z-10 pointer-events-none hero-gradient"></div>
-
-  </div>
-</section>
-
-
+          {/* FIGMA EXACT GRADIENT */}
+          <div className="absolute h-[35%] inset-0 z-10 pointer-events-none hero-gradient"></div>
+        </div>
+      </section>
     </section>
   );
 }

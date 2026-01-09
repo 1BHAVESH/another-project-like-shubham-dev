@@ -26,10 +26,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useParams } from "react-router-dom";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export default function BannerManagement() {
+  const {companyId} = useParams()
+
+  console.log("opopopopopopopo  opopopo", companyId);
+  
   const { data: bannersData, isLoading, error } = useGetDataQuery(
     {
     url: "/banners",
