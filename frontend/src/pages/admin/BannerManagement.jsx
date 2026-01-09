@@ -5,9 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 
 import {
-  
   // useUpdateBannerMutation,
-  
+
   useGetDataQuery,
   useDeleteDataMutation,
   useUpdateDataMutation,
@@ -31,22 +30,24 @@ import { useParams } from "react-router-dom";
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export default function BannerManagement() {
-  const {companyId} = useParams()
+  const { companyId } = useParams();
 
   console.log("opopopopopopopo  opopopo", companyId);
-  
-  const { data: bannersData, isLoading, error } = useGetDataQuery(
-    {
-    url: "/banners",
-    tag: "banners"
-  }
-  );
 
-  const [deleteData, {isLoading: isDeleting}] = useDeleteDataMutation()
-  
+  const {
+    data: bannersData,
+    isLoading,
+    error,
+  } = useGetDataQuery({
+    url: "/banners",
+    tag: "banners",
+  });
+
+  const [deleteData, { isLoading: isDeleting }] = useDeleteDataMutation();
+
   // const [updateBanner] = useUpdateBannerMutation();
 
-  const [updateData] = useUpdateDataMutation()
+  const [updateData] = useUpdateDataMutation();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedBanner, setSelectedBanner] = useState(null);
@@ -107,7 +108,10 @@ export default function BannerManagement() {
 
   // PAGINATE SORTED DATA
   const startIdx = (currentPage - 1) * itemsPerPage;
-  const paginatedBanners = sortedBanners.slice(startIdx, startIdx + itemsPerPage);
+  const paginatedBanners = sortedBanners.slice(
+    startIdx,
+    startIdx + itemsPerPage
+  );
 
   // ----------------- ACTION HANDLERS -----------------
 
@@ -130,8 +134,8 @@ export default function BannerManagement() {
     try {
       // await deleteBanner(bannerToDelete._id).unwrap();
       const response = await deleteData({
-        url:  `/banners/${bannerToDelete._id}`,
-        tag: "banners"
+        url: `/banners/${bannerToDelete._id}`,
+        tag: "banners",
       }).unwrap();
       toast.success("Banner deleted successfully!");
       setDeleteDialogOpen(false);
@@ -144,8 +148,8 @@ export default function BannerManagement() {
   // ⭐ NEW: Status toggle with validation
   const handleStatusToggle = async (banner, newStatus) => {
     // Count currently active banners
-    const activeCount = banners.filter(b => b.isActive !== false).length;
-    
+    const activeCount = banners.filter((b) => b.isActive !== false).length;
+
     // If trying to deactivate the last active banner, prevent it
     if (banner.isActive !== false && !newStatus && activeCount === 1) {
       toast.error("At least one banner must remain active!");
@@ -160,7 +164,11 @@ export default function BannerManagement() {
       formData.append("order", banner.order || 0);
       formData.append("isActive", newStatus);
 
-     const response =  await updateData({ url:  `/banners/${id}`, body: formData, tag: "banners" }).unwrap();
+      const response = await updateData({
+        url: `/banners/${id}`,
+        body: formData,
+        tag: "banners",
+      }).unwrap();
       toast.success(`Banner ${newStatus ? "activated" : "deactivated"}!`);
     } catch (err) {
       toast.error("Failed to update banner status");
@@ -189,7 +197,7 @@ export default function BannerManagement() {
   const MobileCardView = () => (
     <div className="space-y-4 lg:hidden">
       {paginatedBanners.map((banner) => {
-        const activeCount = banners.filter(b => b.isActive !== false).length;
+        const activeCount = banners.filter((b) => b.isActive !== false).length;
         const isLastActive = banner.isActive !== false && activeCount === 1;
 
         return (
@@ -230,10 +238,16 @@ export default function BannerManagement() {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={banner.isActive !== false}
-                  onCheckedChange={(checked) => handleStatusToggle(banner, checked)}
+                  onCheckedChange={(checked) =>
+                    handleStatusToggle(banner, checked)
+                  }
                   disabled={isLastActive}
                   className="data-[state=checked]:bg-[#d4af37] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                  title={isLastActive ? "Cannot deactivate the last active banner" : ""}
+                  title={
+                    isLastActive
+                      ? "Cannot deactivate the last active banner"
+                      : ""
+                  }
                 />
                 <Badge
                   className={
@@ -346,17 +360,26 @@ export default function BannerManagement() {
               key: "isActive",
               label: "Status",
               render: (banner) => {
-                const activeCount = banners.filter(b => b.isActive !== false).length;
-                const isLastActive = banner.isActive !== false && activeCount === 1;
-                
+                const activeCount = banners.filter(
+                  (b) => b.isActive !== false
+                ).length;
+                const isLastActive =
+                  banner.isActive !== false && activeCount === 1;
+
                 return (
                   <div className="flex items-center gap-2">
                     <Switch
                       checked={banner.isActive !== false}
-                      onCheckedChange={(checked) => handleStatusToggle(banner, checked)}
+                      onCheckedChange={(checked) =>
+                        handleStatusToggle(banner, checked)
+                      }
                       disabled={isLastActive}
                       className="data-[state=checked]:bg-[#d4af37] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={isLastActive ? "Cannot deactivate the last active banner" : ""}
+                      title={
+                        isLastActive
+                          ? "Cannot deactivate the last active banner"
+                          : ""
+                      }
                     />
                     <Badge
                       className={
@@ -405,11 +428,13 @@ export default function BannerManagement() {
       {paginatedBanners.length > 0 && (
         <div className="lg:hidden flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
           <div className="text-sm text-zinc-400">
-            Showing {startIdx + 1}-{Math.min(startIdx + itemsPerPage, filteredBanners.length)} of {filteredBanners.length}
+            Showing {startIdx + 1}-
+            {Math.min(startIdx + itemsPerPage, filteredBanners.length)} of{" "}
+            {filteredBanners.length}
           </div>
           <div className="flex gap-2">
             <Button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
               variant="outline"
               size="sm"
@@ -421,7 +446,9 @@ export default function BannerManagement() {
               {currentPage} / {totalPages}
             </div>
             <Button
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+              }
               disabled={currentPage === totalPages}
               variant="outline"
               size="sm"
